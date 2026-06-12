@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>FaviconForgePlugin</AssemblyName>
+    <RootNamespace>FaviconForge</RootNamespace>
+    <Version>1.0.0</Version>
+    <Product>FaviconForge Plugin</Product>
+    <Description>Favicon package generator plugin for KebuzForge</Description>
+  </PropertyGroup>
+
+</Project>
