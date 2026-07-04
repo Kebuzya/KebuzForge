@@ -10,30 +10,42 @@ namespace KebuzForge.App.Core
     {
 
         public static Bitmap Apply(Bitmap source, Color[] palette, string mode, float intensity)
+            => Apply(source, palette, mode, intensity, out _);
+
+        public static Bitmap Apply(Bitmap source, Color[] palette, string mode, float intensity, out byte[] indices)
         {
             if (palette.Length == 0)
-                return new Bitmap(source);
-
-            if (intensity < 0.001f || mode == "None")
-                return PaletteManager.ApplyPalette(source, palette);
-
-            return mode switch
             {
-                "FloydSteinberg" => FloydSteinberg(source, palette, intensity),
-                "Bayer4"         => BayerOrdered(source, palette, intensity, Bayer4x4, 16),
-                "Bayer8"         => BayerOrdered(source, palette, intensity, Bayer8x8, 64),
-                _                => PaletteManager.ApplyPalette(source, palette)
-            };
+                indices = [];
+                return new Bitmap(source);
+            }
+
+            if (intensity >= 0.001f && mode == "FloydSteinberg")
+                return FloydSteinberg(source, palette, intensity, out indices);
+            if (intensity >= 0.001f && mode == "Bayer4")
+                return BayerOrdered(source, palette, intensity, Bayer4x4, 16, out indices);
+            if (intensity >= 0.001f && mode == "Bayer8")
+                return BayerOrdered(source, palette, intensity, Bayer8x8, 64, out indices);
+
+            indices = PaletteManager.ComputeIndices(source, palette);
+            return PaletteManager.FromIndices(indices, source, palette);
         }
 
-        private static Bitmap FloydSteinberg(Bitmap src, Color[] palette, float intensity)
+        private static Dictionary<int, byte> ExactIndexMap(Color[] palette)
+        {
+            var map = new Dictionary<int, byte>();
+            for (int i = 0; i < palette.Length; i++)
+                map.TryAdd((palette[i].R << 16) | (palette[i].G << 8) | palette[i].B, (byte)i);
+            return map;
+        }
+
+        private static Bitmap FloydSteinberg(Bitmap src, Color[] palette, float intensity, out byte[] indices)
         {
             int w = src.Width, h = src.Height;
             byte[] raw = ImageProcessor.LockCopy(src, out int stride);
+            indices = new byte[w * h];
 
-            var exact = new HashSet<int>();
-            foreach (var c in palette)
-                exact.Add((c.R << 16) | (c.G << 8) | c.B);
+            var exact = ExactIndexMap(palette);
 
             float[] er = new float[w * h];
             float[] eg = new float[w * h];
@@ -50,8 +62,12 @@ namespace KebuzForge.App.Core
                     eg[pi] = raw[si + 1];
                     er[pi] = raw[si + 2];
                     ea[pi] = raw[si + 3];
-                    locked[pi] = ea[pi] != 0 &&
-                        exact.Contains((raw[si + 2] << 16) | (raw[si + 1] << 8) | raw[si]);
+                    int key = (raw[si + 2] << 16) | (raw[si + 1] << 8) | raw[si];
+                    if (ea[pi] != 0 && exact.TryGetValue(key, out byte exIdx))
+                    {
+                        locked[pi] = true;
+                        indices[pi] = exIdx;
+                    }
                 }
 
             var result  = new Bitmap(w, h);
@@ -79,7 +95,9 @@ namespace KebuzForge.App.Core
                     byte qg = Clamp(eg[pi]);
                     byte qb = Clamp(eb[pi]);
 
-                    Color nearest = PaletteManager.FindNearest(qr, qg, qb, palette);
+                    int nearestIdx = PaletteManager.FindNearestIndex(qr, qg, qb, palette);
+                    indices[pi] = (byte)nearestIdx;
+                    Color nearest = palette[nearestIdx];
                     WritePixel(dst, dStride, x, y, nearest.B, nearest.G, nearest.R, a);
 
                     float errR = (er[pi] - nearest.R) * intensity;
@@ -98,15 +116,14 @@ namespace KebuzForge.App.Core
             return result;
         }
 
-        private static Bitmap BayerOrdered(Bitmap src, Color[] palette, float intensity, int[,] matrix, int levels)
+        private static Bitmap BayerOrdered(Bitmap src, Color[] palette, float intensity, int[,] matrix, int levels, out byte[] indices)
         {
             int w = src.Width, h = src.Height;
             int matSize = matrix.GetLength(0);
             byte[] raw = ImageProcessor.LockCopy(src, out int stride);
+            indices = new byte[w * h];
 
-            var exact = new HashSet<int>();
-            foreach (var c in palette)
-                exact.Add((c.R << 16) | (c.G << 8) | c.B);
+            var exact = ExactIndexMap(palette);
 
             var result  = new Bitmap(w, h);
             var dstRect = new Rectangle(0, 0, w, h);
@@ -125,8 +142,9 @@ namespace KebuzForge.App.Core
 
                     if (a == 0) { WritePixel(dst, dStride, x, y, 0, 0, 0, 0); continue; }
 
-                    if (exact.Contains((raw[si + 2] << 16) | (raw[si + 1] << 8) | raw[si]))
+                    if (exact.TryGetValue((raw[si + 2] << 16) | (raw[si + 1] << 8) | raw[si], out byte exIdx))
                     {
+                        indices[y * w + x] = exIdx;
                         WritePixel(dst, dStride, x, y, raw[si], raw[si + 1], raw[si + 2], a);
                         continue;
                     }
@@ -137,7 +155,9 @@ namespace KebuzForge.App.Core
                     byte adjG = Clamp(raw[si + 1] + t);
                     byte adjB = Clamp(raw[si]     + t);
 
-                    Color nearest = PaletteManager.FindNearest(adjR, adjG, adjB, palette);
+                    int nearestIdx = PaletteManager.FindNearestIndex(adjR, adjG, adjB, palette);
+                    indices[y * w + x] = (byte)nearestIdx;
+                    Color nearest = palette[nearestIdx];
                     WritePixel(dst, dStride, x, y, nearest.B, nearest.G, nearest.R, a);
                 }
             }

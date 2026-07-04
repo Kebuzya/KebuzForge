@@ -138,20 +138,22 @@ namespace KebuzForge.App.UI
             {
                 if (_pendingColor.HasValue)
                 {
+                    var old = _palette[idx];
                     _palette[idx] = _pendingColor.Value;
                     _pendingColor = null;
                     Cursor = Cursors.Hand;
                     Invalidate(SwatchRect(idx));
-                    PaletteChanged?.Invoke(this, new PaletteChangedEventArgs(idx, _palette[idx]));
+                    PaletteChanged?.Invoke(this, new PaletteChangedEventArgs(idx, _palette[idx], old));
                 }
                 else
                 {
                     using var dlg = new ColorDialog { Color = _palette[idx], FullOpen = true };
                     if (dlg.ShowDialog() == DialogResult.OK)
                     {
+                        var old = _palette[idx];
                         _palette[idx] = dlg.Color;
                         Invalidate(SwatchRect(idx));
-                        PaletteChanged?.Invoke(this, new PaletteChangedEventArgs(idx, dlg.Color));
+                        PaletteChanged?.Invoke(this, new PaletteChangedEventArgs(idx, dlg.Color, old));
                     }
                 }
             }
@@ -196,9 +198,10 @@ namespace KebuzForge.App.UI
                 : Color.FromArgb(200, 200, 200);
     }
 
-    internal class PaletteChangedEventArgs(int index, Color color) : EventArgs
+    internal class PaletteChangedEventArgs(int index, Color color, Color oldColor = default) : EventArgs
     {
-        public int   Index { get; } = index;
-        public Color Color { get; } = color;
+        public int   Index    { get; } = index;
+        public Color Color    { get; } = color;
+        public Color OldColor { get; } = oldColor;
     }
 }

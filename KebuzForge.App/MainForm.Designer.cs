@@ -21,6 +21,7 @@
             menuEditUndo = new ToolStripMenuItem();
             menuEditRedo = new ToolStripMenuItem();
             menuEditReset = new ToolStripMenuItem();
+            menuEditAutoCascade = new ToolStripMenuItem();
             menuPresets = new ToolStripMenuItem();
             menuPresetSave = new ToolStripMenuItem();
             menuExport = new ToolStripMenuItem();
@@ -61,6 +62,7 @@
             nudColorCount = new NumericUpDown();
             cmbRetroPalette = new ComboBox();
             btnApplyPalette = new Button();
+            btnApplyPaletteColors = new Button();
             btnSavePalette = new Button();
             btnLoadPalette = new Button();
             grpDither = new GroupBox();
@@ -122,12 +124,13 @@
             btnDetachAfter = new Button();
             tabBottom = new TabControl();
             tabPageEditor = new TabPage();
-            editorScroll = new Panel();
+            editorScroll = new KebuzForge.App.UI.StableScrollPanel();
             _pixelEditor = new KebuzForge.App.UI.PixelEditorPanel();
             editorToolStrip = new ToolStrip();
             btnToolPencil = new ToolStripButton();
             btnToolLine = new ToolStripButton();
             btnToolRect = new ToolStripButton();
+            btnToolEllipse = new ToolStripButton();
             btnToolFill = new ToolStripButton();
             btnToolEyedrop = new ToolStripButton();
             btnToolEraser = new ToolStripButton();
@@ -137,8 +140,10 @@
             btnZoom8 = new ToolStripButton();
             btnZoom16 = new ToolStripButton();
             btnEditorColor = new ToolStripButton();
+            btnEditorColor2 = new ToolStripButton();
             chkEditorPaletteOnly = new ToolStripButton();
             chkEraserTransparent = new ToolStripButton();
+            chkRmbEraser = new ToolStripButton();
             btnEditorApply = new ToolStripButton();
             btnDetachEditor = new ToolStripButton();
             tabPagePalette = new TabPage();
@@ -232,7 +237,7 @@
             menuFileExit.Size = new Size(173, 22);
             menuFileExit.Text = "Выход";
 
-            menuEdit.DropDownItems.AddRange(new ToolStripItem[] { menuEditUndo, menuEditRedo, menuEditReset });
+            menuEdit.DropDownItems.AddRange(new ToolStripItem[] { menuEditUndo, menuEditRedo, menuEditReset, menuEditAutoCascade });
             menuEdit.Name = "menuEdit";
             menuEdit.Size = new Size(59, 20);
             menuEdit.Text = "Правка";
@@ -250,6 +255,14 @@
             menuEditReset.Name = "menuEditReset";
             menuEditReset.Size = new Size(188, 22);
             menuEditReset.Text = "Сбросить настройки";
+
+            menuEditAutoCascade.Checked = true;
+            menuEditAutoCascade.CheckOnClick = true;
+            menuEditAutoCascade.CheckState = CheckState.Checked;
+            menuEditAutoCascade.Name = "menuEditAutoCascade";
+            menuEditAutoCascade.Size = new Size(188, 22);
+            menuEditAutoCascade.Text = "Авто-каскад";
+            menuEditAutoCascade.ToolTipText = "Пикселизация не сбрасывает палитру, дизеринг и эффекты - они пересчитываются автоматически";
 
             menuPresets.DropDownItems.AddRange(new ToolStripItem[] { menuPresetSave });
             menuPresets.Name = "menuPresets";
@@ -468,6 +481,7 @@
             grpPalette.Controls.Add(nudColorCount);
             grpPalette.Controls.Add(cmbRetroPalette);
             grpPalette.Controls.Add(btnApplyPalette);
+            grpPalette.Controls.Add(btnApplyPaletteColors);
             grpPalette.Controls.Add(btnSavePalette);
             grpPalette.Controls.Add(btnLoadPalette);
             grpPalette.Location = new Point(6, 214);
@@ -503,7 +517,13 @@
             btnApplyPalette.Name = "btnApplyPalette";
             btnApplyPalette.Size = new Size(100, 26);
             btnApplyPalette.TabIndex = 3;
-            btnApplyPalette.Text = "Применить";
+            btnApplyPalette.Text = "Пересчитать";
+
+            btnApplyPaletteColors.Location = new Point(104, 118);
+            btnApplyPaletteColors.Name = "btnApplyPaletteColors";
+            btnApplyPaletteColors.Size = new Size(148, 26);
+            btnApplyPaletteColors.TabIndex = 6;
+            btnApplyPaletteColors.Text = "Применить цвета";
 
             btnSavePalette.Location = new Point(114, 86);
             btnSavePalette.Name = "btnSavePalette";
@@ -1064,7 +1084,7 @@
 
             editorToolStrip.BackColor = Color.FromArgb(230, 230, 230);
             editorToolStrip.GripStyle = ToolStripGripStyle.Hidden;
-            editorToolStrip.Items.AddRange(new ToolStripItem[] { btnToolPencil, btnToolLine, btnToolRect, btnToolFill, btnToolEyedrop, btnToolEraser, btnZoom1, btnZoom2, btnZoom4, btnZoom8, btnZoom16, btnEditorColor, chkEditorPaletteOnly, chkEraserTransparent, btnEditorApply, btnDetachEditor });
+            editorToolStrip.Items.AddRange(new ToolStripItem[] { btnToolPencil, btnToolLine, btnToolRect, btnToolEllipse, btnToolFill, btnToolEyedrop, btnToolEraser, btnZoom1, btnZoom2, btnZoom4, btnZoom8, btnZoom16, btnEditorColor, btnEditorColor2, chkEditorPaletteOnly, chkEraserTransparent, chkRmbEraser, btnEditorApply, btnDetachEditor });
             editorToolStrip.Location = new Point(0, 0);
             editorToolStrip.Name = "editorToolStrip";
             editorToolStrip.Size = new Size(932, 32);
@@ -1094,7 +1114,15 @@
             btnToolRect.Size = new Size(23, 29);
             btnToolRect.Tag = "Прямоугольник";
             btnToolRect.Text = "▭";
-            btnToolRect.ToolTipText = "Прямоугольник";
+            btnToolRect.ToolTipText = "Прямоугольник (Shift - квадрат, Ctrl - от центра)";
+
+            btnToolEllipse.CheckOnClick = true;
+            btnToolEllipse.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnToolEllipse.Name = "btnToolEllipse";
+            btnToolEllipse.Size = new Size(23, 29);
+            btnToolEllipse.Tag = "Окружность";
+            btnToolEllipse.Text = "◯";
+            btnToolEllipse.ToolTipText = "Окружность (Shift - ровный круг, Ctrl - от центра)";
 
             btnToolFill.CheckOnClick = true;
             btnToolFill.DisplayStyle = ToolStripItemDisplayStyle.Text;
@@ -1153,6 +1181,14 @@
             btnEditorColor.Text = "■";
             btnEditorColor.ToolTipText = "Цвет карандаша (клик для выбора)";
 
+            btnEditorColor2.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnEditorColor2.Font = new Font("Segoe UI", 14F);
+            btnEditorColor2.ForeColor = Color.White;
+            btnEditorColor2.Name = "btnEditorColor2";
+            btnEditorColor2.Size = new Size(32, 29);
+            btnEditorColor2.Text = "▪";
+            btnEditorColor2.ToolTipText = "Цвет ПКМ (клик для выбора)";
+
             chkEditorPaletteOnly.CheckOnClick = true;
             chkEditorPaletteOnly.Name = "chkEditorPaletteOnly";
             chkEditorPaletteOnly.Size = new Size(58, 29);
@@ -1166,6 +1202,12 @@
             chkEraserTransparent.Size = new Size(89, 29);
             chkEraserTransparent.Text = "Прозр. ластик";
             chkEraserTransparent.ToolTipText = "Ластик стирает в прозрачный (иначе в фон)";
+
+            chkRmbEraser.CheckOnClick = true;
+            chkRmbEraser.Name = "chkRmbEraser";
+            chkRmbEraser.Size = new Size(80, 29);
+            chkRmbEraser.Text = "ПКМ-ластик";
+            chkRmbEraser.ToolTipText = "Правая кнопка стирает (иначе рисует цветом ПКМ)";
 
             btnEditorApply.DisplayStyle = ToolStripItemDisplayStyle.Text;
             btnEditorApply.Name = "btnEditorApply";
@@ -1395,7 +1437,7 @@
         private MenuStrip menuStrip;
         private ToolStripMenuItem menuFile, menuEdit;
         private ToolStripMenuItem menuFileOpen, menuFileExit;
-        private ToolStripMenuItem menuEditUndo, menuEditRedo, menuEditReset;
+        private ToolStripMenuItem menuEditUndo, menuEditRedo, menuEditReset, menuEditAutoCascade;
         private ToolStripMenuItem menuPresets, menuPresetSave;
         private ToolStripMenuItem menuExport, menuExportPng, menuExportIndexed, menuExportIco, menuExportBatch;
         private ToolStripMenuItem menuView, miLight, miDark, miHybrid;
@@ -1425,7 +1467,7 @@
         private Label lblColorCountTitle;
         private NumericUpDown nudColorCount;
         private ComboBox cmbRetroPalette;
-        private Button btnApplyPalette, btnSavePalette, btnLoadPalette;
+        private Button btnApplyPalette, btnApplyPaletteColors, btnSavePalette, btnLoadPalette;
 
         private ComboBox cmbDitherMode;
         private Label lblDitherVal;
@@ -1455,11 +1497,11 @@
         private NumericUpDown nudBgTolerance;
 
         private ToolStrip editorToolStrip;
-        private ToolStripButton btnToolPencil, btnToolLine, btnToolRect, btnToolFill, btnToolEyedrop, btnToolEraser;
+        private ToolStripButton btnToolPencil, btnToolLine, btnToolRect, btnToolEllipse, btnToolFill, btnToolEyedrop, btnToolEraser;
         private ToolStripButton btnZoom1, btnZoom2, btnZoom4, btnZoom8, btnZoom16;
-        private ToolStripButton btnEditorColor, btnEditorApply;
-        private ToolStripButton chkEraserTransparent, chkEditorPaletteOnly;
-        private Panel editorScroll;
+        private ToolStripButton btnEditorColor, btnEditorColor2, btnEditorApply;
+        private ToolStripButton chkEraserTransparent, chkEditorPaletteOnly, chkRmbEraser;
+        private UI.StableScrollPanel editorScroll;
         private UI.PixelEditorPanel _pixelEditor = null!;
         private UI.PalettePanel _palettePanel = null!;
         private ToolStripButton btnDetachEditor;

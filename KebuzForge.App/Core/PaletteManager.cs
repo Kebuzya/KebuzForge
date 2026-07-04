@@ -72,42 +72,51 @@ namespace KebuzForge.App.Core
             return result;
         }
 
-        public static Bitmap ApplyPaletteIndexed(Bitmap source, Color[] palette, out byte[] indices)
+        public static Bitmap SwapColor(Bitmap source, Color from, Color to)
         {
             int w = source.Width, h = source.Height;
-            indices = new byte[w * h];
-            var result  = new Bitmap(w, h);
-            var srcRect = new Rectangle(0, 0, w, h);
+            var result = new Bitmap(w, h, PixelFormat.Format32bppArgb);
+            var rect = new Rectangle(0, 0, w, h);
 
-            var srcData = source.LockBits(srcRect, ImageLockMode.ReadOnly,  PixelFormat.Format32bppArgb);
-            var dstData = result.LockBits(srcRect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-            int stride  = srcData.Stride;
+            var srcData = source.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            var dstData = result.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+            int stride = srcData.Stride;
 
-            var src = new byte[h * stride];
-            var dst = new byte[h * stride];
-            Marshal.Copy(srcData.Scan0, src, 0, src.Length);
+            var buf = new byte[h * stride];
+            Marshal.Copy(srcData.Scan0, buf, 0, buf.Length);
+
+            for (int i = 0; i < buf.Length; i += 4)
+            {
+                if (buf[i + 3] == 0) continue;
+                if (buf[i] == from.B && buf[i + 1] == from.G && buf[i + 2] == from.R)
+                {
+                    buf[i]     = to.B;
+                    buf[i + 1] = to.G;
+                    buf[i + 2] = to.R;
+                }
+            }
+
+            Marshal.Copy(buf, 0, dstData.Scan0, buf.Length);
+            source.UnlockBits(srcData);
+            result.UnlockBits(dstData);
+            return result;
+        }
+
+        public static byte[] ComputeIndices(Bitmap source, Color[] palette)
+        {
+            int w = source.Width, h = source.Height;
+            var indices = new byte[w * h];
+            byte[] src = ImageProcessor.LockCopy(source, out int stride);
 
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                 {
-                    int i  = y * stride + x * 4;
-                    int pi = y * w + x;
-                    byte a = src[i + 3];
-                    if (a == 0) { dst[i] = dst[i+1] = dst[i+2] = dst[i+3] = 0; continue; }
-
-                    int idx = FindNearestIndex(src[i+2], src[i+1], src[i], palette);
-                    indices[pi] = (byte)idx;
-                    Color c    = palette[idx];
-                    dst[i]     = c.B;
-                    dst[i + 1] = c.G;
-                    dst[i + 2] = c.R;
-                    dst[i + 3] = a;
+                    int i = y * stride + x * 4;
+                    if (src[i + 3] == 0) continue;
+                    indices[y * w + x] = (byte)FindNearestIndex(src[i + 2], src[i + 1], src[i], palette);
                 }
 
-            Marshal.Copy(dst, 0, dstData.Scan0, dst.Length);
-            source.UnlockBits(srcData);
-            result.UnlockBits(dstData);
-            return result;
+            return indices;
         }
 
         public static Bitmap FromIndices(byte[] indices, Bitmap alphaSource, Color[] palette)
@@ -143,31 +152,6 @@ namespace KebuzForge.App.Core
             alphaSource.UnlockBits(srcData);
             result.UnlockBits(dstData);
             return result;
-        }
-
-        public static void RecolorIndexed(Bitmap target, byte[] indices, int index, Color color)
-        {
-            int w = target.Width, h = target.Height;
-            var rect = new Rectangle(0, 0, w, h);
-            var data = target.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-            int stride = data.Stride;
-            var buf = new byte[h * stride];
-            Marshal.Copy(data.Scan0, buf, 0, buf.Length);
-
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                {
-                    int pi = y * w + x;
-                    if (indices[pi] != index) continue;
-                    int i = y * stride + x * 4;
-                    if (buf[i + 3] == 0) continue;
-                    buf[i]     = color.B;
-                    buf[i + 1] = color.G;
-                    buf[i + 2] = color.R;
-                }
-
-            Marshal.Copy(buf, 0, data.Scan0, buf.Length);
-            target.UnlockBits(data);
         }
 
         internal static int FindNearestIndex(byte r, byte g, byte b, Color[] palette)

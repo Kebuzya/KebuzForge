@@ -36,6 +36,8 @@
 
         public int BgTolerance { get; set; } = 15;
 
+        public bool AutoCascade { get; set; } = true;
+
         public int ThemeIndex { get; set; } = 0;
 
         public int LanguageIndex { get; set; } = 0;

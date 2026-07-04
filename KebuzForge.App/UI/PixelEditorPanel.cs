@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace KebuzForge.App.UI
 {
-    public enum EditorTool { Pencil, Line, Rectangle, FloodFill, Eyedropper, Eraser }
+    public enum EditorTool { Pencil, Line, Rectangle, Ellipse, FloodFill, Eyedropper, Eraser }
 
     public sealed class PixelEditorPanel : Control
     {
@@ -13,6 +13,7 @@ namespace KebuzForge.App.UI
         public event EventHandler?        BeforeChange;
         public event EventHandler<Bitmap>? ImageChanged;
         public event EventHandler<Color>?  ColorPicked;
+        public event EventHandler<Color>?  SecondaryColorPicked;
 
         private Bitmap? _image;
         public Bitmap? EditImage
@@ -40,12 +41,16 @@ namespace KebuzForge.App.UI
 
         public EditorTool Tool       { get; set; } = EditorTool.Pencil;
         public Color      ForeColor2 { get; set; } = Color.Black;
+        public Color      SecondaryColor { get; set; } = Color.White;
         public bool       EraserTransparent { get; set; } = true;
+        public bool       RightButtonEraser { get; set; }
 
         private bool    _drawing;
+        private bool    _strokeRight;
         private Point   _startPixel;
         private Point   _lastPixel;
         private Bitmap? _previewOverlay;
+        private bool[,]? _previewMask;
 
         private bool  _panning;
         private Point _panLastScreen;
@@ -113,6 +118,43 @@ namespace KebuzForge.App.UI
 
             if (_zoom >= 4)
                 DrawGrid(g, offX, offY, iw, ih);
+
+            if (_drawing && _previewMask is not null)
+                DrawPreviewOutline(g, offX, offY);
+        }
+
+        private void DrawPreviewOutline(Graphics g, int ox, int oy)
+        {
+            if (_previewMask is null || _image is null) return;
+            int w = _image.Width, h = _image.Height, z = _zoom;
+            using var outer = new SolidBrush(Color.Black);
+            using var inner = new SolidBrush(Color.White);
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    if (!_previewMask[x, y]) continue;
+                    int rx = ox + x * z, ry = oy + y * z;
+                    if (y == 0 || !_previewMask[x, y - 1])
+                    {
+                        g.FillRectangle(outer, rx, ry - 1, z, 1);
+                        g.FillRectangle(inner, rx, ry, z, 1);
+                    }
+                    if (y == h - 1 || !_previewMask[x, y + 1])
+                    {
+                        g.FillRectangle(inner, rx, ry + z - 1, z, 1);
+                        g.FillRectangle(outer, rx, ry + z, z, 1);
+                    }
+                    if (x == 0 || !_previewMask[x - 1, y])
+                    {
+                        g.FillRectangle(outer, rx - 1, ry, 1, z);
+                        g.FillRectangle(inner, rx, ry, 1, z);
+                    }
+                    if (x == w - 1 || !_previewMask[x + 1, y])
+                    {
+                        g.FillRectangle(inner, rx + z - 1, ry, 1, z);
+                        g.FillRectangle(outer, rx + z, ry, 1, z);
+                    }
+                }
         }
 
         private void DrawCheckerboard(Graphics g, int ox, int oy, int iw, int ih)
@@ -186,18 +228,19 @@ namespace KebuzForge.App.UI
 
             if (!InBounds(ScreenToPixelRaw(e.Location))) return;
 
+            _strokeRight = e.Button == MouseButtons.Right;
             _startPixel = ScreenToPixel(e.Location);
             _lastPixel  = _startPixel;
 
             switch (Tool)
             {
                 case EditorTool.Eyedropper:
-                    PickColor(_startPixel);
+                    PickColor(_startPixel, _strokeRight);
                     return;
 
                 case EditorTool.FloodFill:
                     BeforeChange?.Invoke(this, EventArgs.Empty);
-                    FloodFill(_image, _startPixel, ForeColor2);
+                    FloodFill(_image, _startPixel, GetDrawColor());
                     ImageChanged?.Invoke(this, _image);
                     Invalidate();
                     return;
@@ -212,6 +255,7 @@ namespace KebuzForge.App.UI
 
                 case EditorTool.Line:
                 case EditorTool.Rectangle:
+                case EditorTool.Ellipse:
                     BeforeChange?.Invoke(this, EventArgs.Empty);
                     _drawing = true;
                     EnsureOverlay();
@@ -252,15 +296,19 @@ namespace KebuzForge.App.UI
 
                 case EditorTool.Line:
                     RefreshOverlay();
-                    DrawLineOnOverlay(_startPixel, cur);
+                    DrawShapeOnOverlay(EditorTool.Line, _startPixel, cur);
                     Invalidate();
                     break;
 
                 case EditorTool.Rectangle:
+                case EditorTool.Ellipse:
+                {
                     RefreshOverlay();
-                    DrawRectOnOverlay(_startPixel, cur);
+                    var (pa, pb) = ShapeCorners(cur);
+                    DrawShapeOnOverlay(Tool, pa, pb);
                     Invalidate();
                     break;
+                }
             }
         }
 
@@ -286,9 +334,20 @@ namespace KebuzForge.App.UI
                     break;
 
                 case EditorTool.Rectangle:
+                {
                     CommitOverlay();
-                    DrawRectOnImage(_image, _startPixel, cur);
+                    var (pa, pb) = ShapeCorners(cur);
+                    DrawRectOnImage(_image, pa, pb);
                     break;
+                }
+
+                case EditorTool.Ellipse:
+                {
+                    CommitOverlay();
+                    var (pa, pb) = ShapeCorners(cur);
+                    DrawEllipseOnImage(_image, pa, pb);
+                    break;
+                }
             }
 
             ImageChanged?.Invoke(this, _image);
@@ -301,21 +360,47 @@ namespace KebuzForge.App.UI
             bmp.SetPixel(p.X, p.Y, GetDrawColor());
         }
 
-        private Color GetDrawColor() =>
-            (Tool == EditorTool.Eraser)
-                ? (EraserTransparent ? Color.Transparent : BackColor)
-                : ForeColor2;
+        private Color GetDrawColor()
+        {
+            if (Tool == EditorTool.Eraser) return EraserColor;
+            if (_strokeRight) return RightButtonEraser ? EraserColor : SecondaryColor;
+            return ForeColor2;
+        }
+
+        private Color EraserColor =>
+            EraserTransparent ? Color.Transparent : BackColor;
+
+        private (Point a, Point b) ShapeCorners(Point cur)
+        {
+            int dx = cur.X - _startPixel.X;
+            int dy = cur.Y - _startPixel.Y;
+            if (ModifierKeys.HasFlag(Keys.Shift))
+            {
+                int side = Math.Max(Math.Abs(dx), Math.Abs(dy));
+                dx = Math.Sign(dx == 0 ? 1 : dx) * side;
+                dy = Math.Sign(dy == 0 ? 1 : dy) * side;
+            }
+            var corner = new Point(_startPixel.X + dx, _startPixel.Y + dy);
+            if (ModifierKeys.HasFlag(Keys.Control))
+                return (new Point(_startPixel.X - dx, _startPixel.Y - dy), corner);
+            return (_startPixel, corner);
+        }
 
         private void Bresenham(Bitmap bmp, Point a, Point b)
+        {
+            Color c = GetDrawColor();
+            BresenhamCore(a, b, (x, y) => PlotPixel(bmp, x, y, c));
+        }
+
+        private static void BresenhamCore(Point a, Point b, Action<int, int> plot)
         {
             int dx = Math.Abs(b.X - a.X), dy = Math.Abs(b.Y - a.Y);
             int sx = a.X < b.X ? 1 : -1, sy = a.Y < b.Y ? 1 : -1;
             int err = dx - dy, x = a.X, y = a.Y;
-            Color c = GetDrawColor();
 
             while (true)
             {
-                if (InBounds(new Point(x, y))) bmp.SetPixel(x, y, c);
+                plot(x, y);
                 if (x == b.X && y == b.Y) break;
                 int e2 = 2 * err;
                 if (e2 > -dy) { err -= dy; x += sx; }
@@ -325,18 +410,91 @@ namespace KebuzForge.App.UI
 
         private void DrawRectOnImage(Bitmap bmp, Point a, Point b)
         {
+            Color c = GetDrawColor();
+            RectCore(a, b, (x, y) => PlotPixel(bmp, x, y, c));
+        }
+
+        private static void RectCore(Point a, Point b, Action<int, int> plot)
+        {
             int x1 = Math.Min(a.X, b.X), y1 = Math.Min(a.Y, b.Y);
             int x2 = Math.Max(a.X, b.X), y2 = Math.Max(a.Y, b.Y);
-            Color c = GetDrawColor();
             for (int x = x1; x <= x2; x++)
             {
-                if (InBounds(new Point(x, y1))) bmp.SetPixel(x, y1, c);
-                if (InBounds(new Point(x, y2))) bmp.SetPixel(x, y2, c);
+                plot(x, y1);
+                plot(x, y2);
             }
             for (int y = y1; y <= y2; y++)
             {
-                if (InBounds(new Point(x1, y))) bmp.SetPixel(x1, y, c);
-                if (InBounds(new Point(x2, y))) bmp.SetPixel(x2, y, c);
+                plot(x1, y);
+                plot(x2, y);
+            }
+        }
+
+        private void DrawEllipseOnImage(Bitmap bmp, Point a, Point b)
+        {
+            Color c = GetDrawColor();
+            EllipseCore(a, b, (x, y) => PlotPixel(bmp, x, y, c));
+        }
+
+        private static void EllipseCore(Point a, Point b, Action<int, int> plot)
+        {
+            int x0 = Math.Min(a.X, b.X), y0 = Math.Min(a.Y, b.Y);
+            int x1 = Math.Max(a.X, b.X), y1 = Math.Max(a.Y, b.Y);
+
+            long w = x1 - x0, h = y1 - y0, h1 = h & 1;
+            long dx = 4 * (1 - w) * h * h;
+            long dy = 4 * (h1 + 1) * w * w;
+            long err = dx + dy + h1 * w * w;
+
+            y0 += (int)((h + 1) / 2);
+            y1 = y0 - (int)h1;
+            long wa = 8 * w * w, ha = 8 * h * h;
+
+            do
+            {
+                plot(x1, y0);
+                plot(x0, y0);
+                plot(x0, y1);
+                plot(x1, y1);
+                long e2 = 2 * err;
+                if (e2 <= dy) { y0++; y1--; err += dy += wa; }
+                if (e2 >= dx || 2 * err > dy) { x0++; x1--; err += dx += ha; }
+            } while (x0 <= x1);
+
+            while (y0 - y1 < h)
+            {
+                plot(x0 - 1, y0);
+                plot(x1 + 1, y0);
+                y0++;
+                plot(x0 - 1, y1);
+                plot(x1 + 1, y1);
+                y1--;
+            }
+        }
+
+        private void PlotPixel(Bitmap bmp, int x, int y, Color c)
+        {
+            if (InBounds(new Point(x, y))) bmp.SetPixel(x, y, c);
+        }
+
+        private void DrawShapeOnOverlay(EditorTool tool, Point a, Point b)
+        {
+            if (_previewOverlay is null || _previewMask is null) return;
+            var ovl = _previewOverlay;
+            var mask = _previewMask;
+            Color c = GetDrawColor();
+            void Plot(int x, int y)
+            {
+                if (!InBounds(new Point(x, y))) return;
+                ovl.SetPixel(x, y, c);
+                mask[x, y] = true;
+            }
+
+            switch (tool)
+            {
+                case EditorTool.Line:      BresenhamCore(a, b, Plot); break;
+                case EditorTool.Rectangle: RectCore(a, b, Plot);      break;
+                case EditorTool.Ellipse:   EllipseCore(a, b, Plot);   break;
             }
         }
 
@@ -345,6 +503,7 @@ namespace KebuzForge.App.UI
             if (_image is null) return;
             _previewOverlay?.Dispose();
             _previewOverlay = new Bitmap(_image.Width, _image.Height, PixelFormat.Format32bppArgb);
+            _previewMask = new bool[_image.Width, _image.Height];
         }
 
         private void RefreshOverlay()
@@ -355,25 +514,16 @@ namespace KebuzForge.App.UI
 
                 using var g = Graphics.FromImage(_previewOverlay!);
                 g.Clear(Color.Transparent);
+                if (_previewMask is not null)
+                    Array.Clear(_previewMask, 0, _previewMask.Length);
             }
-        }
-
-        private void DrawLineOnOverlay(Point a, Point b)
-        {
-            if (_previewOverlay is null) return;
-            Bresenham(_previewOverlay, a, b);
-        }
-
-        private void DrawRectOnOverlay(Point a, Point b)
-        {
-            if (_previewOverlay is null) return;
-            DrawRectOnImage(_previewOverlay, a, b);
         }
 
         private void CommitOverlay()
         {
             _previewOverlay?.Dispose();
             _previewOverlay = null;
+            _previewMask = null;
         }
 
         private static void FloodFill(Bitmap bmp, Point start, Color fillColor)
@@ -401,11 +551,14 @@ namespace KebuzForge.App.UI
         private static bool SameColor(Color a, Color b) =>
             a.A == b.A && a.R == b.R && a.G == b.G && a.B == b.B;
 
-        private void PickColor(Point p)
+        private void PickColor(Point p, bool secondary)
         {
             if (!InBounds(p) || _image is null) return;
             var c = _image.GetPixel(p.X, p.Y);
-            ColorPicked?.Invoke(this, c);
+            if (secondary)
+                SecondaryColorPicked?.Invoke(this, c);
+            else
+                ColorPicked?.Invoke(this, c);
         }
 
         protected override void Dispose(bool disposing)

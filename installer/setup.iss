@@ -1,5 +1,5 @@
 ﻿#define AppName "KebuzForge"
-#define AppVersion "1.0.0"
+#define AppVersion "1.1.0"
 #define AppPublisher "Kebuz"
 #define AppExeName "KebuzForge.exe"
 

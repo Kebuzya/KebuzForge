@@ -28,18 +28,22 @@ namespace KebuzForge.App
         private Color[] _currentPalette = [];
         private byte[]? _paletteIndices;
         private Size _paletteIndexSize;
+        private byte[]? _resultIndices;
         private Color _edgeColor = Color.Black;
         private bool _sliderDragging;
         private bool _sliderHistoryPushed;
+        private (Label Lbl, TrackBar Trk)[] _sliderPairs = [];
+        private readonly ToolTip _sliderTip = new();
         private AppSettings _historySettings = new();
         private Bitmap? _historySource;
         private byte[]? _historyIndices;
         private Color[] _historyPalette = [];
         private readonly HistoryManager _history = new();
-        private Bitmap? _effectResult;
         private bool _effectActive;
         private bool _flatActive;
         private bool _ditherActive;
+        private bool _paletteActive;
+        private bool _autoCascade = true;
         private bool _loadingSettings;
         private bool _eyedropperActive;
         private Color _eyedropperOrigBack, _eyedropperOrigFore;
@@ -96,8 +100,15 @@ namespace KebuzForge.App
             }
             btnDropHint.Click += (s, e) => OpenFileDialog();
 
-            foreach (var trk in new[] { trkSphereScale, trkSphereBulge, trkOffsetU, trkOffsetV,
-                trkCornerSharp, trkAmbient, trkDiffuse, trkLightAzimuth, trkLightElev, trkDitherIntensity })
+            _sliderPairs =
+            [
+                (lblSphereScale, trkSphereScale), (lblSphereBulge, trkSphereBulge),
+                (lblOffsetU, trkOffsetU), (lblOffsetV, trkOffsetV),
+                (lblCornerSharp, trkCornerSharp), (lblAmbient, trkAmbient),
+                (lblDiffuse, trkDiffuse), (lblLightAzimuth, trkLightAzimuth),
+                (lblLightElev, trkLightElev), (lblDitherVal, trkDitherIntensity)
+            ];
+            foreach (var (lbl, trk) in _sliderPairs)
             {
                 trk.MouseDown += (s, e) =>
                 {
@@ -105,7 +116,10 @@ namespace KebuzForge.App
                     _sliderHistoryPushed = false;
                 };
                 trk.MouseUp += (s, e) => _sliderDragging = false;
+                lbl.Cursor = Cursors.Hand;
+                lbl.DoubleClick += (s, e) => BeginSliderValueEdit(lbl, trk);
             }
+            RefreshSliderTips();
 
             this.KeyPreview = true;
             this.KeyDown += OnKeyDown;
@@ -147,6 +161,10 @@ namespace KebuzForge.App
             nudWidth.Leave += (s, e) => SyncHeightToWidth();
             nudHeight.ValueChanged += (s, e) => SyncWidthToHeight();
             nudHeight.Leave += (s, e) => SyncWidthToHeight();
+            chkKeepAspect.CheckedChanged += (s, e) =>
+            {
+                if (chkKeepAspect.Checked && !_loadingSettings) SyncHeightToWidth();
+            };
 
             btnDetachBefore.Click += (s, e) => ToggleDetach("before", panelBefore, Lang.T("ДО"));
             btnDetachAfter.Click += (s, e) => ToggleDetach("after", panelAfter, Lang.T("ПОСЛЕ"));
@@ -261,9 +279,12 @@ namespace KebuzForge.App
             btnRemoveBg.Click += (s, e) => RemoveBackground();
 
             btnApplyPalette.Click += (s, e) => ApplyPalette();
+            btnApplyPaletteColors.Click += (s, e) => ApplyPaletteColors();
             btnApplyDither.Click += (s, e) => ApplyDitherOnly();
             btnSavePalette.Click += (s, e) => SavePaletteToFile();
             btnLoadPalette.Click += (s, e) => LoadPaletteFromFile();
+
+            menuEditAutoCascade.Click += (s, e) => _autoCascade = menuEditAutoCascade.Checked;
 
             cmbRetroPalette.SelectedIndexChanged += (s, e) =>
             {
@@ -307,11 +328,19 @@ namespace KebuzForge.App
             {
                 _pixelEditor.ForeColor2 = c;
                 btnEditorColor.ForeColor = c;
+                EditorToolSelected(btnToolPencil, EventArgs.Empty);
+            };
+            _pixelEditor.SecondaryColorPicked += (s, c) =>
+            {
+                _pixelEditor.SecondaryColor = c;
+                btnEditorColor2.ForeColor = c;
+                EditorToolSelected(btnToolPencil, EventArgs.Empty);
             };
 
             btnToolPencil.Click += EditorToolSelected;
             btnToolLine.Click += EditorToolSelected;
             btnToolRect.Click += EditorToolSelected;
+            btnToolEllipse.Click += EditorToolSelected;
             btnToolFill.Click += EditorToolSelected;
             btnToolEyedrop.Click += EditorToolSelected;
             btnToolEraser.Click += EditorToolSelected;
@@ -322,9 +351,12 @@ namespace KebuzForge.App
             btnZoom8.Click += (s, e) => SetEditorZoom(8);
             btnZoom16.Click += (s, e) => SetEditorZoom(16);
 
-            btnEditorColor.Click += (s, e) => PickEditorColor();
+            btnEditorColor.Click += (s, e) => PickEditorColor(false);
+            btnEditorColor2.Click += (s, e) => PickEditorColor(true);
             chkEraserTransparent.CheckedChanged += (s, e) =>
                 _pixelEditor.EraserTransparent = chkEraserTransparent.Checked;
+            chkRmbEraser.CheckedChanged += (s, e) =>
+                _pixelEditor.RightButtonEraser = chkRmbEraser.Checked;
             btnEditorApply.Click += (s, e) => ApplyEditorToResult();
 
             _activeToolBtn = btnToolPencil;
@@ -359,6 +391,53 @@ namespace KebuzForge.App
             if (e.Control && e.KeyCode == Keys.V) { PasteFromClipboard(); e.Handled = true; }
             if (e.Control && e.KeyCode == Keys.Z) { PerformUndo(); e.Handled = true; }
             if (e.Control && e.KeyCode == Keys.Y) { PerformRedo(); e.Handled = true; }
+        }
+
+        private void RefreshSliderTips()
+        {
+            foreach (var (lbl, trk) in _sliderPairs)
+                _sliderTip.SetToolTip(lbl,
+                    $"{Lang.T("Двойной клик - ввести значение")} ({trk.Minimum}..{trk.Maximum})");
+        }
+
+        private void BeginSliderValueEdit(Label lbl, TrackBar trk)
+        {
+            var parent = lbl.Parent;
+            if (parent is null) return;
+            var box = new TextBox
+            {
+                Text = trk.Value.ToString(),
+                Font = lbl.Font,
+                Location = lbl.Location,
+                Width = 60,
+                TextAlign = HorizontalAlignment.Center
+            };
+            _sliderTip.SetToolTip(box, $"{trk.Minimum}..{trk.Maximum}");
+            lbl.Visible = false;
+            bool done = false;
+            void Finish(bool apply)
+            {
+                if (done) return;
+                done = true;
+                if (apply && int.TryParse(box.Text.Trim().TrimEnd('%', '°'), out int v))
+                    trk.Value = Math.Clamp(v, trk.Minimum, trk.Maximum);
+                lbl.Visible = true;
+                BeginInvoke(() =>
+                {
+                    parent.Controls.Remove(box);
+                    box.Dispose();
+                });
+            }
+            box.KeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; Finish(true); }
+                else if (e.KeyCode == Keys.Escape) { e.SuppressKeyPress = true; Finish(false); }
+            };
+            box.Leave += (s, e) => Finish(true);
+            parent.Controls.Add(box);
+            box.BringToFront();
+            box.Focus();
+            box.SelectAll();
         }
 
         private void menuFileOpen_Click(object? sender, EventArgs e) => OpenFileDialog();
@@ -478,7 +557,14 @@ namespace KebuzForge.App
                 _pixelizedImage?.Dispose();
                 _pixelizedImage = pixelized;
                 _paletteIndices = null;
-                SetProcessedImage(new Bitmap(pixelized));
+                if (!_autoCascade)
+                {
+                    _paletteActive = false;
+                    _ditherActive  = false;
+                    _effectActive  = false;
+                    _flatActive    = false;
+                }
+                RebuildResult();
             }
             catch (Exception ex)
             {
@@ -501,11 +587,11 @@ namespace KebuzForge.App
             _pipelineResult = null;
             _editorOverlay?.Dispose();
             _editorOverlay = null;
-            _effectResult?.Dispose();
-            _effectResult = null;
             _effectActive = false;
             _flatActive = false;
             _ditherActive = false;
+            _paletteActive = false;
+            _resultIndices = null;
             picAfter.Image = null;
             lblAfterTitle.Text = Lang.T("ПОСЛЕ");
         }
@@ -717,14 +803,17 @@ namespace KebuzForge.App
 
         private Form CreateDetachForm(string title)
         {
-            return new Form
+            var form = new Form
             {
                 Text = title,
                 Size = new Size(960, 720),
                 MinimumSize = new Size(480, 360),
                 StartPosition = FormStartPosition.CenterParent,
-                Icon = this.Icon
+                Icon = this.Icon,
+                KeyPreview = true
             };
+            form.KeyDown += OnKeyDown;
+            return form;
         }
 
         private void RefreshPreviewLayout()
@@ -938,16 +1027,8 @@ namespace KebuzForge.App
                     ? PaletteManager.GetRetroPalette(key)!
                     : PaletteManager.MedianCut(source, (int)nudColorCount.Value);
 
-                _currentPalette = palette;
-                _palettePanel.Palette = palette;
-                tabBottom.SelectedTab = tabPagePalette;
-
-                var result = PaletteManager.ApplyPaletteIndexed(source, palette, out var indices);
-                _paletteIndices = indices;
-                _paletteIndexSize = source.Size;
-                SetProcessedImage(result);
-
-                lblStatusZoom.Text = $"{Lang.T("Палитра")}: {palette.Length} {Lang.T("цветов")}";
+                SetActivePalette(source, palette);
+                lblStatusZoom.Text = $"{Lang.T("Палитра")}: {_currentPalette.Length} {Lang.T("цветов")}";
             }
             catch (Exception ex)
             {
@@ -960,6 +1041,46 @@ namespace KebuzForge.App
             }
         }
 
+        private void ApplyPaletteColors()
+        {
+            var source = EnsurePixelizedSource();
+            if (source is null)
+            {
+                MessageBox.Show(Lang.T("Сначала загрузите изображение."), "KebuzForge",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            if (_palettePanel.Palette.Length == 0)
+            {
+                MessageBox.Show(Lang.T("Палитра пуста. Пересчитайте или загрузите палитру."), "KebuzForge",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
+                Cursor = Cursors.WaitCursor;
+                SetActivePalette(source, _palettePanel.Palette);
+                lblStatusZoom.Text = $"{Lang.T("Палитра")}: {_currentPalette.Length} {Lang.T("цветов")}";
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
+        }
+
+        private void SetActivePalette(Bitmap source, Color[] palette)
+        {
+            _currentPalette = (Color[])palette.Clone();
+            _palettePanel.Palette = _currentPalette;
+            _paletteIndices = PaletteManager.ComputeIndices(source, _currentPalette);
+            _paletteIndexSize = source.Size;
+            _paletteActive = true;
+            if (!_detachedForms.ContainsKey("palette"))
+                tabBottom.SelectedTab = tabPagePalette;
+            RebuildResult();
+        }
+
         private void OnPaletteChanged(object? sender, PaletteChangedEventArgs e)
         {
             if (e.Index == -1)
@@ -969,32 +1090,24 @@ namespace KebuzForge.App
             }
             _palettePanel.ClearHighlight();
 
-            var source = EnsurePixelizedSource();
-            if (source is null) return;
+            if (!ReferenceEquals(_palettePanel.Palette, _currentPalette)) return;
+            if (_pipelineResult is null) return;
+            if (e.OldColor.ToArgb() == e.Color.ToArgb()) return;
             try
             {
                 Cursor = Cursors.WaitCursor;
-                if (_paletteIndices is not null && _paletteIndexSize == source.Size)
-                {
-                    PaletteManager.RecolorIndexed(source, _paletteIndices, e.Index, e.Color);
-                    if (_effectActive || _flatActive)
-                        ApplyEffect();
-                    else if (_ditherActive)
-                        ApplyDitherOnly();
-                    else
-                        SetProcessedImage(PaletteManager.FromIndices(_paletteIndices, source, _currentPalette));
-                }
-                else
-                {
-                    SetProcessedImage(PaletteManager.ApplyPalette(source, _currentPalette));
-                }
+                var recolored = _resultIndices is not null &&
+                                _resultIndices.Length == _pipelineResult.Width * _pipelineResult.Height
+                    ? PaletteManager.FromIndices(_resultIndices, _pipelineResult, _currentPalette)
+                    : PaletteManager.SwapColor(_pipelineResult, e.OldColor, e.Color);
+                SetProcessedImage(recolored);
             }
             finally { Cursor = Cursors.Default; }
         }
 
         private void SavePaletteToFile()
         {
-            if (_currentPalette.Length == 0)
+            if (_palettePanel.Palette.Length == 0)
             {
                 MessageBox.Show(Lang.T("Палитра пуста. Сначала примените палитру."), "KebuzForge",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1006,7 +1119,7 @@ namespace KebuzForge.App
                 Filter = "JASC PAL|*.pal|Photoshop ACT|*.act|GIMP GPL|*.gpl"
             };
             if (dlg.ShowDialog() == DialogResult.OK)
-                PaletteManager.SavePalette(_currentPalette, dlg.FileName);
+                PaletteManager.SavePalette(_palettePanel.Palette, dlg.FileName);
         }
 
         private void PerformUndo()
@@ -1039,6 +1152,7 @@ namespace KebuzForge.App
             _pixelizedImage = snap.Source;
             _paletteIndices = snap.PaletteIndices;
             _paletteIndexSize = snap.Source?.Size ?? Size.Empty;
+            _resultIndices = null;
             _currentPalette = snap.Palette;
             _palettePanel.Palette = _currentPalette;
 
@@ -1061,10 +1175,7 @@ namespace KebuzForge.App
 
         private void ApplyDitherOnly()
         {
-            var source = ((_effectActive || _flatActive) ? _effectResult : null)
-                         ?? _pixelizedImage
-                         ?? _originalImage;
-            if (source is null)
+            if (_pixelizedImage is null && _originalImage is null)
             {
                 MessageBox.Show(Lang.T("Сначала загрузите изображение."), "KebuzForge",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1079,9 +1190,8 @@ namespace KebuzForge.App
             try
             {
                 Cursor = Cursors.WaitCursor;
-                var result = DitheringEngine.Apply(source, _currentPalette, GetDitherMode(), GetDitherIntensity());
                 _ditherActive = true;
-                SetProcessedImage(result);
+                RebuildResult();
             }
             finally { Cursor = Cursors.Default; }
         }
@@ -1107,18 +1217,14 @@ namespace KebuzForge.App
 
             try
             {
-                _currentPalette = PaletteManager.LoadPalette(dlg.FileName);
-                nudColorCount.Value = Math.Clamp(_currentPalette.Length, 2, 256);
-                _palettePanel.Palette = _currentPalette;
-
-                var source = EnsurePixelizedSource();
-                if (source is not null)
-                {
-                    var result = PaletteManager.ApplyPaletteIndexed(source, _currentPalette, out var indices);
-                    _paletteIndices = indices;
-                    _paletteIndexSize = source.Size;
-                    SetProcessedImage(result);
-                }
+                var loaded = PaletteManager.LoadPalette(dlg.FileName);
+                _palettePanel.Palette = loaded;
+                _updatingAspect = true;
+                nudColorCount.Value = Math.Clamp(loaded.Length, 2, 256);
+                _updatingAspect = false;
+                if (!_detachedForms.ContainsKey("palette"))
+                    tabBottom.SelectedTab = tabPagePalette;
+                lblStatusZoom.Text = Lang.T("Палитра загружена - нажмите «Применить цвета»");
             }
             catch (Exception ex)
             {
@@ -1130,92 +1236,93 @@ namespace KebuzForge.App
         private void ReapplyEffectIfActive()
         {
             if (!_loadingSettings && (_effectActive || _flatActive))
-                ApplyEffect();
+                RebuildResult();
         }
 
         private void ReapplyDitherIfActive()
         {
             if (_ditherActive && !_loadingSettings)
-                ApplyDitherOnly();
+                RebuildResult();
         }
 
         private void ApplyEffect()
         {
-            var source = _pixelizedImage ?? _originalImage;
-            if (source is null)
+            if (_pixelizedImage is null && _originalImage is null)
             {
                 MessageBox.Show(Lang.T("Сначала загрузите изображение."), "KebuzForge",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            if (rbEffectNone.Checked)
-            {
-                float scale   = trkSphereScale.Value / 100f;
-                float offsetU = trkOffsetU.Value / 100f;
-                float offsetV = trkOffsetV.Value / 100f;
-
-                _effectActive = false;
-                _effectResult?.Dispose();
-
-                Bitmap flatResult = (scale != 1f || offsetU != 0f || offsetV != 0f)
-                    ? EffectsProcessor.FlatTransform(source, scale, offsetU, offsetV)
-                    : new Bitmap(source);
-
-                _effectResult = flatResult;
-                _flatActive = true;
-
-                Bitmap final = (_ditherActive && _currentPalette.Length > 0)
-                    ? DitheringEngine.Apply(flatResult, _currentPalette, GetDitherMode(), GetDitherIntensity())
-                    : new Bitmap(flatResult);
-
-                SetProcessedImage(final);
-                return;
-            }
-
-            _flatActive = false;
+            _effectActive = !rbEffectNone.Checked;
+            _flatActive   = rbEffectNone.Checked;
 
             try
             {
                 Cursor = Cursors.WaitCursor;
+                RebuildResult();
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
+        }
 
-                float ambient = trkAmbient.Value / 100f;
-                float diffuse = trkDiffuse.Value / 100f;
-                float azimuth = trkLightAzimuth.Value;
-                float elevation = trkLightElev.Value;
-                float scale = trkSphereScale.Value / 100f;
-                float bulge = trkSphereBulge.Value / 100f;
-                float offsetU = trkOffsetU.Value / 100f;
-                float offsetV = trkOffsetV.Value / 100f;
+        private void RebuildResult()
+        {
+            var source = _pixelizedImage ?? _originalImage;
+            if (source is null) return;
 
-                Bitmap effResult;
-                if (rbEffectSphere.Checked)
+            try
+            {
+                Bitmap work;
+                if (_effectActive)
                 {
-                    effResult = EffectsProcessor.Spherize(source, scale, bulge, offsetU, offsetV,
-                        ambient, diffuse, azimuth, elevation, chkSpecular.Checked);
+                    work = RenderEffect(source);
                 }
-                else if (rbEffectRounded.Checked)
+                else if (_flatActive)
                 {
-                    float sharpness = trkCornerSharp.Value;
-                    bool fromRect   = chkShapeFromRect.Checked;
-                    effResult = EffectsProcessor.RoundedRect(source, scale, bulge, sharpness, fromRect,
-                        offsetU, offsetV, ambient, diffuse, azimuth, elevation, chkSpecular.Checked);
+                    float scale   = trkSphereScale.Value / 100f;
+                    float offsetU = trkOffsetU.Value / 100f;
+                    float offsetV = trkOffsetV.Value / 100f;
+                    work = (scale != 1f || offsetU != 0f || offsetV != 0f)
+                        ? EffectsProcessor.FlatTransform(source, scale, offsetU, offsetV)
+                        : new Bitmap(source);
                 }
                 else
                 {
-                    bool horizontal = cmbCylinderDir.SelectedIndex == 0;
-                    effResult = EffectsProcessor.Cylinderize(source, horizontal, scale, bulge, offsetU, offsetV,
-                        ambient, diffuse, azimuth, elevation);
+                    work = new Bitmap(source);
                 }
 
-                _effectResult?.Dispose();
-                _effectResult = effResult;
-                _effectActive = true;
+                Bitmap final;
+                byte[]? resultIndices = null;
+                if (_ditherActive && _currentPalette.Length > 0)
+                {
+                    final = DitheringEngine.Apply(work, _currentPalette, GetDitherMode(), GetDitherIntensity(), out resultIndices);
+                    work.Dispose();
+                }
+                else if (_paletteActive && _currentPalette.Length > 0)
+                {
+                    if (!_effectActive && !_flatActive &&
+                        _paletteIndices is not null && _paletteIndexSize == source.Size)
+                    {
+                        resultIndices = _paletteIndices;
+                        final = PaletteManager.FromIndices(_paletteIndices, source, _currentPalette);
+                        work.Dispose();
+                    }
+                    else
+                    {
+                        resultIndices = PaletteManager.ComputeIndices(work, _currentPalette);
+                        final = PaletteManager.FromIndices(resultIndices, work, _currentPalette);
+                        work.Dispose();
+                    }
+                }
+                else
+                {
+                    final = work;
+                }
 
-                Bitmap final = (_ditherActive && _currentPalette.Length > 0)
-                    ? DitheringEngine.Apply(effResult, _currentPalette, GetDitherMode(), GetDitherIntensity())
-                    : new Bitmap(effResult);
-
+                _resultIndices = resultIndices;
                 SetProcessedImage(final);
             }
             catch (Exception ex)
@@ -1223,10 +1330,30 @@ namespace KebuzForge.App
                 MessageBox.Show($"{Lang.T("Ошибка эффекта")}:\n{ex.Message}", Lang.T("Ошибка"),
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            finally
-            {
-                Cursor = Cursors.Default;
-            }
+        }
+
+        private Bitmap RenderEffect(Bitmap source)
+        {
+            float ambient = trkAmbient.Value / 100f;
+            float diffuse = trkDiffuse.Value / 100f;
+            float azimuth = trkLightAzimuth.Value;
+            float elevation = trkLightElev.Value;
+            float scale = trkSphereScale.Value / 100f;
+            float bulge = trkSphereBulge.Value / 100f;
+            float offsetU = trkOffsetU.Value / 100f;
+            float offsetV = trkOffsetV.Value / 100f;
+
+            if (rbEffectSphere.Checked)
+                return EffectsProcessor.Spherize(source, scale, bulge, offsetU, offsetV,
+                    ambient, diffuse, azimuth, elevation, chkSpecular.Checked);
+
+            if (rbEffectRounded.Checked)
+                return EffectsProcessor.RoundedRect(source, scale, bulge,
+                    trkCornerSharp.Value, chkShapeFromRect.Checked,
+                    offsetU, offsetV, ambient, diffuse, azimuth, elevation, chkSpecular.Checked);
+
+            return EffectsProcessor.Cylinderize(source, cmbCylinderDir.SelectedIndex == 0,
+                scale, bulge, offsetU, offsetV, ambient, diffuse, azimuth, elevation);
         }
 
         private void EditorToolSelected(object? sender, EventArgs e)
@@ -1241,6 +1368,7 @@ namespace KebuzForge.App
             _pixelEditor.Tool = btn == btnToolPencil ? UI.EditorTool.Pencil
                               : btn == btnToolLine ? UI.EditorTool.Line
                               : btn == btnToolRect ? UI.EditorTool.Rectangle
+                              : btn == btnToolEllipse ? UI.EditorTool.Ellipse
                               : btn == btnToolFill ? UI.EditorTool.FloodFill
                               : btn == btnToolEyedrop ? UI.EditorTool.Eyedropper
                               : UI.EditorTool.Eraser;
@@ -1267,15 +1395,11 @@ namespace KebuzForge.App
             else
                 BakeOverlayFlat(source);
 
+            _paletteIndices = null;
             _editorOverlay?.Dispose();
             _editorOverlay = null;
 
-            if (_effectActive)
-                ApplyEffect();
-            else if (_ditherActive)
-                ApplyDitherOnly();
-            else
-                SetProcessedImage(new Bitmap(source));
+            RebuildResult();
         }
 
         private void BakeOverlayThroughEffect(Bitmap source)
@@ -1344,9 +1468,7 @@ namespace KebuzForge.App
                 _pixelizedImage = target;
                 _paletteIndices = null;
 
-                if (_effectActive) ApplyEffect();
-                else if (_ditherActive) ApplyDitherOnly();
-                else SetProcessedImage(new Bitmap(target));
+                RebuildResult();
             }
             finally { Cursor = Cursors.Default; }
         }
@@ -1422,26 +1544,32 @@ namespace KebuzForge.App
             MessageBox.Show(Lang.T("Нет результата для экспорта."), "KebuzForge",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-        private void PickEditorColor()
+        private void PickEditorColor(bool secondary)
         {
+            Color current = secondary ? _pixelEditor.SecondaryColor : _pixelEditor.ForeColor2;
+            var anchor = secondary ? btnEditorColor2 : btnEditorColor;
+
             Color? picked = chkEditorPaletteOnly.Checked && _currentPalette.Length > 0
-                ? ShowPaletteColorPicker(_currentPalette)
-                : ShowFreeColorPicker();
+                ? ShowPaletteColorPicker(_currentPalette, current, anchor)
+                : ShowFreeColorPicker(current);
 
             if (picked is not null)
             {
-                _pixelEditor.ForeColor2 = picked.Value;
-                btnEditorColor.ForeColor = picked.Value;
+                if (secondary)
+                    _pixelEditor.SecondaryColor = picked.Value;
+                else
+                    _pixelEditor.ForeColor2 = picked.Value;
+                anchor.ForeColor = picked.Value;
             }
         }
 
-        private Color? ShowFreeColorPicker()
+        private Color? ShowFreeColorPicker(Color current)
         {
-            using var dlg = new ColorDialog { Color = _pixelEditor.ForeColor2, FullOpen = true };
+            using var dlg = new ColorDialog { Color = current, FullOpen = true };
             return dlg.ShowDialog() == DialogResult.OK ? dlg.Color : null;
         }
 
-        private Color? ShowPaletteColorPicker(Color[] palette)
+        private Color? ShowPaletteColorPicker(Color[] palette, Color current, ToolStripButton anchor)
         {
             const int sz = 24, pad = 3, cols = 8;
             int rows = (palette.Length + cols - 1) / cols;
@@ -1463,7 +1591,7 @@ namespace KebuzForge.App
             };
 
             var pt = editorToolStrip.PointToScreen(
-                new Point(btnEditorColor.Bounds.Left, editorToolStrip.Height));
+                new Point(anchor.Bounds.Left, editorToolStrip.Height));
             popup.Location = pt;
 
             var canvas = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(45, 45, 45) };
@@ -1477,7 +1605,7 @@ namespace KebuzForge.App
                     int y = pad + row * (sz + pad);
                     using var b = new SolidBrush(palette[i]);
                     g.FillRectangle(b, x, y, sz, sz);
-                    bool active = palette[i].ToArgb() == _pixelEditor.ForeColor2.ToArgb();
+                    bool active = palette[i].ToArgb() == current.ToArgb();
                     g.DrawRectangle(active ? Pens.White : Pens.Black, x, y, sz - 1, sz - 1);
                     if (active)
                         g.DrawRectangle(Pens.White, x - 1, y - 1, sz + 1, sz + 1);
@@ -1531,6 +1659,7 @@ namespace KebuzForge.App
             EdgeMode = cmbEdgeMode.SelectedIndex,
             EdgeColor = _edgeColor.ToArgb(),
             BgTolerance = (int)nudBgTolerance.Value,
+            AutoCascade = _autoCascade,
             ThemeIndex  = (int)_currentTheme,
             LanguageIndex = Lang.English ? 1 : 0,
         };
@@ -1617,6 +1746,8 @@ namespace KebuzForge.App
                 btnEdgeColor.BackColor = _edgeColor;
                 btnEdgeColor.ForeColor = _edgeColor.GetBrightness() < 0.5f ? Color.White : Color.Black;
                 nudBgTolerance.Value = Math.Clamp(s.BgTolerance, 0, 255);
+                _autoCascade = s.AutoCascade;
+                menuEditAutoCascade.Checked = _autoCascade;
 
                 lblDitherVal.Text = $"{Lang.T("Интенсивность")}: {trkDitherIntensity.Value}%";
                 lblSphereScale.Text = $"{Lang.T("Масштаб")}: {trkSphereScale.Value}%";
@@ -1647,6 +1778,7 @@ namespace KebuzForge.App
             miLangEn.Text = english ? "● English" : "  English";
             SetTheme(_currentTheme);
             ApplySettings(BuildCurrentSettings());
+            RefreshSliderTips();
             RefreshTitles();
             UpdateStatus();
         }
