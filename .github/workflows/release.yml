@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags: [ "v*" ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Check versions match tag
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart("v")
+          $csproj = ([xml](Get-Content KebuzForge.App/KebuzForge.App.csproj)).Project.PropertyGroup.Version |
+            Where-Object { $_ } | Select-Object -First 1
+          $iss = (Select-String -Path installer/setup.iss -Pattern '#define AppVersion "([^"]+)"').Matches[0].Groups[1].Value
+          if ($csproj -ne $tag -or $iss -ne $tag) {
+            Write-Error "Version mismatch: tag=$tag csproj=$csproj setup.iss=$iss"
+            exit 1
+          }
+          "VER=$tag" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build solution
+        run: dotnet build KebuzForge.sln -c Release
+
+      - name: Publish single-file builds
+        shell: pwsh
+        run: |
+          $rel = Join-Path (Split-Path $env:GITHUB_WORKSPACE -Parent) "release"
+          New-Item -ItemType Directory -Force $rel | Out-Null
+          foreach ($rid in @("win-x64", "win-arm64", "win-x86")) {
+            dotnet publish KebuzForge.App -c Release -r $rid --self-contained true -p:PublishSingleFile=true -o "pub/$rid-portable"
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+            Copy-Item "pub/$rid-portable/KebuzForge.exe" "$rel/KebuzForge-$rid-portable.exe"
+            dotnet publish KebuzForge.App -c Release -r $rid --self-contained false -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=false -o "pub/$rid-lite"
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+            Copy-Item "pub/$rid-lite/KebuzForge.exe" "$rel/KebuzForge-$rid-lite.exe"
+          }
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\setup.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Pack plugin
+        shell: pwsh
+        run: |
+          $rel = Join-Path (Split-Path $env:GITHUB_WORKSPACE -Parent) "release"
+          $ver = (Select-String -Path FaviconForgePlugin/PluginEntry.cs -Pattern 'PluginVersion => "([^"]+)"').Matches[0].Groups[1].Value
+          Compress-Archive -Path "FaviconForgePlugin/bin/Release/net8.0-windows/FaviconForgePlugin.dll", "FaviconForgePlugin/README.txt" -DestinationPath "$rel/FaviconForgePlugin-$ver.zip" -Force
+
+      - name: Stage release assets
+        shell: pwsh
+        run: |
+          $rel = Join-Path (Split-Path $env:GITHUB_WORKSPACE -Parent) "release"
+          New-Item -ItemType Directory -Force "release-assets" | Out-Null
+          Copy-Item "$rel/*" "release-assets/"
+          Get-ChildItem "release-assets"
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: KebuzForge ${{ env.VER }}
+          draft: true
+          fail_on_unmatched_files: true
+          files: release-assets/*

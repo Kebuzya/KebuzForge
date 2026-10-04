@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>kebuforg.ico</ApplicationIcon>
+    <AssemblyName>KebuzForge</AssemblyName>
+    <Version>1.1.1</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(PublishSingleFile)'=='true'">
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="kebuforg.ico" />
+  </ItemGroup>
+
+</Project>
