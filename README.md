@@ -1,50 +1,107 @@
-[English](README.md) | [Русский](README_RU.md)
+<div align="center">
 
 # KebuzForge
 
-A tool for creating pixel art and icons from regular images (Windows, WinForms, .NET 8).
+**Pixel art and icons from ordinary pictures, or drawn from scratch.**
+Pixelize a picture, pick a palette, wrap it on a sphere, touch up pixels by hand, export PNG, ICO or an animated GIF.
 
-## Features
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0a0a0a)](#)
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/)
+[![UI](https://img.shields.io/badge/UI-WinForms-1f6feb)](https://learn.microsoft.com/dotnet/desktop/winforms/)
+[![License](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
 
-- **Pixelization** - block averaging or center sampling, aspect ratio lock
-- **Palettes** - quantization of the picture as it looks after the 3D effect (flat-color art keeps its exact colors and small saturated accents get their own color, photos and noisy scans use k-medians so line art keeps its pure colors), perceptual matching of pixels to the palette (CIE94, fewer stray dots on outlines; can be switched to plain RGB), retro palettes with the best N colors picked for the picture, per-color recoloring without re-quantization, adding a color by hand or the one the picture misses most, removing a color, shade and highlight ramps with a hue shift, import/export (JASC PAL, Photoshop ACT, GIMP GPL)
-- **Dithering** - Floyd–Steinberg, Bayer 4×4 / 8×8 with adjustable intensity, applied over effects
-- **3D effects** - sphere, cylinder, rounded rectangle with lighting (ambient/diffuse, light direction)
-- **Pixel editor** - pencil, line, rectangle, ellipse (Shift - regular shape, Ctrl - from center), fill, eyedropper, eraser, secondary color on right click, zoom up to 16×; edit the picture right after pixelization (palette, dithering and effects apply over your edits) or the final result (what you draw is what you get)
-- **Canvas** - every opened image becomes a canvas object you can move, resize, rotate and shadow; drop or paste more images onto it, copy objects with Ctrl+drag or Ctrl+D, right-click to pick an object hidden under another, pick fill, stroke and shadow colors with an eyedropper anywhere on the screen, group objects with Ctrl+G and move, resize and rotate a group or any multi-selection as one, intersect a whole group with another object in one step, objects snap to the center and edges of the canvas and of other objects (Alt while dragging inverts it, the toolbar button turns it off), resize with Shift to keep proportions and Ctrl to scale from the center, and build an icon at a large size from rectangles, ellipses, triangles, lines, arcs with arrows and text in any installed font, with rotation, shadows and a separate color for the overlap of two objects; the pixel result updates as you draw
-- **Start screen** - the empty main window offers to open an image, start a new canvas or a blank pixel art
-- **Projects** - save everything (canvas, images, settings, palette, pixel edits) to one `.kforge` file and open it later as it was; the app asks before closing unsaved work and autosaves every 2 minutes, offering recovery after a crash
-- **Canvas zoom** - Ctrl+wheel zooms to the cursor, the wheel scrolls, the middle button or Space + mouse pans, Ctrl+0 fits the canvas
-- **Animation** - frame-by-frame GIF processing through the full pipeline, animated GIF export
-- **Export** - PNG, Indexed PNG (8 bpp), multi-size ICO, batch processing
-- **Pipeline auto-cascade** - re-pixelizing automatically maps the pixels to the current palette and reapplies dithering and effects, keeping pixel edits and removed areas while the size stays the same (can be turned off); a new palette is built only by "Build palette"
-- **Background removal** by clicking areas on the result (each click makes a connected area transparent, with tolerance), outlines, detachable panels, dark/light/hybrid themes, presets, double-click a slider label to type an exact value
-- **Plugins** - extend functionality via DLLs
-- **Update notice** - on startup the app asks GitHub for the latest release and shows a small link in the status bar if a newer version exists; × hides it until the next version
+[English](README.md) | [Русский](README_RU.md)
 
-## Download
+<img src="docs/main-en.png" width="800" alt="KebuzForge: a picture of an anvil pixelized onto a sphere" />
 
-Ready-to-use builds are in the [Releases](../../releases) section:
+</div>
 
-| File | Description |
-|---|---|
-| `KebuzForge-Setup-…-win-x64.exe` | Installer: shortcuts, uninstaller, downloads .NET 8 Runtime automatically |
-| `KebuzForge-win-x64-portable.exe` | Single file, no installation needed (~68 MB) |
-| `KebuzForge-win-x64-lite.exe` | Single file ~0.4 MB, requires [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) |
-| `KebuzForge-win-arm64-…` / `win-x86-…` | Same for Windows ARM64 and 32-bit systems |
-| `FaviconForgePlugin-….zip` | "Favicon Generator" plugin |
+---
+
+## Why
+
+Turning a picture into pixel art usually takes a chain of tools: one to scale it down, another to cut the colors, a third to fix pixels by hand, a fourth to build an ICO. KebuzForge keeps the whole chain in one window, and every step stays live: change the size, the palette or the effect, and the result on the right follows, with your hand edits kept on top.
+
+It works the other way round too: draw an icon at a large size from shapes and text on the object canvas and watch the pixel version appear as you draw.
+
+Fully offline: no account, no telemetry. The only network request is a check for a new version on GitHub at startup.
+
+The interface is in English and Russian, switched in the **View** menu.
+
+## What it does
+
+### Object canvas
+
+Build an icon at a large size from rectangles, ellipses, triangles, lines and arcs with arrows, text in any installed font (emoji included) and pictures. The pixel result on the right updates as you draw.
+
+- Move, resize (**Shift** keeps proportions, **Ctrl** scales from the center), rotate with the circle handle, drag the ends of lines and arcs
+- Shadows, and a separate color for the overlap of two objects
+- Snapping to the center and edges of the canvas and of other objects; **Alt** while dragging inverts it, the toolbar button turns it off
+- Groups (**Ctrl+G**, **Ctrl+Shift+G**) move, resize and rotate as one object; copy with Ctrl+drag or **Ctrl+D**; right-click picks an object hidden under another
+- An eyedropper next to the fill, stroke and shadow colors picks a color anywhere on the screen
+- **Ctrl+wheel** zooms to the cursor, the wheel scrolls, the middle button or **Space** + mouse pans, **Ctrl+0** fits the canvas; shapes and text stay sharp when zoomed in
+- Every opened picture becomes a canvas object; drop or paste more pictures onto it
+
+### Pixelization and palettes
+
+- Block averaging or center sampling, aspect ratio lock; very large pictures (over 2048x2048 by area) are scaled down for speed
+- **Build palette** picks N colors from the picture as it looks after the 3D effect: flat art keeps its exact colors and small bright accents, photos and noisy scans keep their pure colors instead of washed-out averages
+- Retro palettes with the best N colors picked for the picture
+- Add a color with the **+** tile, or the one the picture misses most with **Add missing color**; remove one with a right click; recolor a swatch without rebuilding the palette
+- **Shades and highlights** grow a small palette with darker and lighter steps and a hue shift, with a live preview
+- Perceptual matching of pixels to the palette (CIE94, fewer stray dots on outlines), switchable to plain RGB
+- Import and export: JASC PAL, Photoshop ACT, GIMP GPL
+
+### 3D effects and dithering
+
+- Sphere, cylinder and rounded rectangle with lighting: ambient, diffuse, light direction
+- Floyd-Steinberg and Bayer 4×4 / 8×8 with adjustable intensity, applied over the effects
+
+### Pixel editor
+
+- Pencil, line, rectangle, ellipse (**Shift** - regular shape, **Ctrl** - from center), fill, eyedropper, eraser, secondary color on right click, zoom up to 16×
+- Two layers: right after pixelization (palette, dithering and effects apply over your edits) or the final result (what you draw is what you get)
+- Background removal: press **Remove background** and click areas on the result to make them transparent, as many as needed; similar neighboring colors are taken by the tolerance, each click can be undone
+
+### Projects
+
+Save everything (canvas, pictures, settings, palette, pixel edits) to one `.kforge` file and open it later as it was. The app asks before closing unsaved work and autosaves every 2 minutes, offering recovery after a crash.
+
+### Animation and export
+
+- Frame-by-frame GIF processing through the whole pipeline, animated GIF export
+- PNG, indexed PNG (8 bpp), multi-size ICO, batch processing
+
+### The rest
+
+- **Auto-cascade** - re-pixelizing maps the pixels to the current palette and reapplies dithering and effects, keeping pixel edits and removed areas while the size stays the same (Edit menu, can be turned off); a new palette is built only by **Build palette**
+- Outlines, detachable panels, dark, light and hybrid themes, presets, double-click a slider label to type an exact value
+- A small link in the status bar when a newer version is out; **×** hides it until the next one
+- Plugins, see below
+
+## Install
+
+Grab a file from [Releases](../../releases):
+
+| Download | What it is |
+| --- | --- |
+| `KebuzForge-Setup-<version>-win-x64.exe` | **Recommended.** Installer: Start menu shortcut, removal through *Apps*, fetches the .NET 8 Desktop Runtime if you do not have it |
+| `KebuzForge-win-x64-portable.exe` | One file with everything inside, nothing to install (about 72 MB) |
+| `KebuzForge-win-x64-lite.exe` | One file of about 0.6 MB; needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) |
+| `KebuzForge-win-arm64-...` / `KebuzForge-win-x86-...` | The same for Windows on ARM and 32-bit Windows |
+| `FaviconForgePlugin-<version>.zip` | The Favicon Generator plugin |
+
+**Requirements.** Windows 10 or 11.
+
+**SmartScreen.** The files are not signed, so Windows may warn on first start: *More info > Run anyway*.
 
 ## Plugins
 
-Plugins are DLLs placed in `%LocalAppData%\Kebuz\KebuzForge\Plugins`
-(menu **Plugins → Open plugins folder...**) or in the `Plugins` folder next to the exe (portable variant).
+Plugins are DLLs placed in `%LocalAppData%\Kebuz\KebuzForge\Plugins` (menu **Plugins -> Open plugins folder...**) or in a `Plugins` folder next to the exe.
 
 ### Favicon Generator
 
-Generates a complete favicon package for a website (similar to realfavicongenerator.net):
-favicon.ico + PNG (16/32/48), apple-touch-icon, android-chrome 192/512, PWA maskable,
-Windows Tiles + browserconfig.xml, safari-pinned-tab.svg, site.webmanifest and ready-to-use HTML code.
-Background, padding, rounding and color settings per platform, live previews, export to ZIP or folder.
+A complete favicon package for a website, similar to realfavicongenerator.net: favicon.ico and PNG (16/32/48), apple-touch-icon, android-chrome 192/512, PWA maskable, Windows tiles with browserconfig.xml, safari-pinned-tab.svg, site.webmanifest and ready-to-use HTML. Background, padding, rounding and colors per platform, live previews, export to ZIP or a folder.
 
 ### Your own plugin
 
@@ -60,7 +117,9 @@ public static class PluginEntry
 }
 ```
 
-## Building from source
+## Build from source
+
+.NET 8 SDK required.
 
 ```
 dotnet build KebuzForge.sln -c Release
@@ -73,12 +132,22 @@ dotnet publish KebuzForge.App -c Release -r win-x64 --self-contained true -p:Pub
 dotnet publish KebuzForge.App -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=false
 ```
 
-Installer (requires [Inno Setup 6](https://jrsoftware.org/isinfo.php)):
+Installer, needs [Inno Setup 6](https://jrsoftware.org/isinfo.php):
 
 ```
 iscc installer\setup.iss
 ```
 
+## Where the data lives
+
+| What | Where |
+| --- | --- |
+| Settings | `%LOCALAPPDATA%\Kebuz\KebuzForge\settings.json` |
+| Presets | `%LOCALAPPDATA%\Kebuz\KebuzForge\presets\` |
+| Autosave | `%LOCALAPPDATA%\Kebuz\KebuzForge\autosave\` |
+| Plugins | `%LOCALAPPDATA%\Kebuz\KebuzForge\Plugins\`, or `Plugins\` next to the exe |
+| Projects | `.kforge` files wherever you save them |
+
 ## License
 
-[MIT](LICENSE)
+MIT, see [LICENSE](LICENSE).
