@@ -27,6 +27,27 @@ namespace KebuzForge.App.Core
         public static void RemoveFromPoint(Bitmap bmp, Point start, Color targetColor, int tolerance)
             => FloodFill(bmp, start, tolerance, targetColor);
 
+        public static void RemoveColor(Bitmap bmp, Color targetColor, int tolerance)
+        {
+            int w = bmp.Width, h = bmp.Height;
+            var data = bmp.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+            int stride = data.Stride;
+            var raw = new byte[h * stride];
+            Marshal.Copy(data.Scan0, raw, 0, raw.Length);
+
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    var c = ColorAt(raw, stride, x, y);
+                    if (c.A == 0 || !Within(c, targetColor, tolerance)) continue;
+                    int i = y * stride + x * 4;
+                    raw[i] = raw[i + 1] = raw[i + 2] = raw[i + 3] = 0;
+                }
+
+            Marshal.Copy(raw, 0, data.Scan0, raw.Length);
+            bmp.UnlockBits(data);
+        }
+
         private static void FloodFill(Bitmap bmp, Point seed, int tolerance,
                                       Color? overrideTarget = null)
         {

@@ -33,6 +33,9 @@ namespace KebuzForge.App
         private Color _edgeColor = Color.Black;
         private bool _sliderDragging;
         private bool _sliderHistoryPushed;
+        private TrackBar? _burstSlider;
+        private long _burstLast;
+        private int _burstDirection;
         private (Label Lbl, TrackBar Trk)[] _sliderPairs = [];
         private readonly ToolTip _sliderTip = new();
         private AppSettings _historySettings = new();
@@ -140,6 +143,8 @@ namespace KebuzForge.App
                     _sliderHistoryPushed = false;
                 };
                 trk.MouseUp += (s, e) => _sliderDragging = false;
+                trk.MouseWheel += (s, e) => NoteSliderBurst(trk, Math.Sign(e.Delta));
+                trk.KeyDown += (s, e) => NoteSliderBurst(trk, e.KeyCode is Keys.Left or Keys.Down or Keys.PageDown or Keys.Home ? -1 : 1);
                 lbl.Cursor = Cursors.Hand;
                 lbl.DoubleClick += (s, e) => BeginSliderValueEdit(lbl, trk);
             }
@@ -676,14 +681,17 @@ namespace KebuzForge.App
         internal void SetProcessedImage(Bitmap bmp)
         {
 
-            if (!_quietRebuild && !_sliderDragging)
+            if (!_quietRebuild && !IsSameResult(bmp))
             {
-                PushHistory();
-            }
-            else if (!_quietRebuild && !_sliderHistoryPushed)
-            {
-                PushHistory();
-                _sliderHistoryPushed = true;
+                if (!SliderGesture)
+                {
+                    PushHistory();
+                }
+                else if (!_sliderHistoryPushed)
+                {
+                    PushHistory();
+                    _sliderHistoryPushed = true;
+                }
             }
 
             _pipelineResult?.Dispose();
@@ -708,6 +716,30 @@ namespace KebuzForge.App
             SyncEditorImage();
             UpdateStatus();
             UpdateUndoRedoButtons();
+        }
+
+        private bool IsSameResult(Bitmap next)
+        {
+            if (_pipelineResult is null || _pipelineResult.Size != next.Size) return false;
+            if (!_currentPalette.Select(c => c.ToArgb()).SequenceEqual(_historyPalette.Select(c => c.ToArgb()))) return false;
+            var a = ImageProcessor.LockCopy(_pipelineResult, out _);
+            var b = ImageProcessor.LockCopy(next, out _);
+            return a.AsSpan().SequenceEqual(b);
+        }
+
+        private const int SliderBurstMs = 800;
+
+        private bool SliderGesture =>
+            _sliderDragging || (_burstSlider is not null && Environment.TickCount64 - _burstLast < SliderBurstMs);
+
+        private void NoteSliderBurst(TrackBar trk, int direction)
+        {
+            long now = Environment.TickCount64;
+            if (_burstSlider != trk || now - _burstLast >= SliderBurstMs || direction != _burstDirection)
+                _sliderHistoryPushed = false;
+            _burstSlider = trk;
+            _burstLast = now;
+            _burstDirection = direction;
         }
 
         private void PushHistory()
@@ -1689,7 +1721,7 @@ namespace KebuzForge.App
             _bgPickActive = true;
             picAfter.Cursor = Cursors.Cross;
             btnRemoveBg.Text = Lang.T("Готово (Esc)");
-            lblStatusZoom.Text = Lang.T("Щёлкайте по «ПОСЛЕ»: область станет прозрачной");
+            lblStatusZoom.Text = Lang.T("Щёлкайте по «ПОСЛЕ»: область станет прозрачной (Shift - весь цвет)");
         }
 
         private void StopBgPick()
@@ -1715,8 +1747,12 @@ namespace KebuzForge.App
             var target = PixelOverlay.CopyOf(_processedImage);
             var seed = target.GetPixel(ix, iy);
             if (seed.A == 0) { target.Dispose(); return; }
-            BackgroundRemover.RemoveFromPoint(target, new Point(ix, iy), seed, (int)nudBgTolerance.Value);
+            if ((ModifierKeys & Keys.Shift) != 0)
+                BackgroundRemover.RemoveColor(target, seed, (int)nudBgTolerance.Value);
+            else
+                BackgroundRemover.RemoveFromPoint(target, new Point(ix, iy), seed, (int)nudBgTolerance.Value);
 
+            _historySettings = BuildCurrentSettings();
             PushHistory();
             if (_pipelineResult is not null && _pipelineResult.Size == target.Size)
                 _editorOverlay = PixelOverlay.Extract(target, _pipelineResult);
@@ -2032,6 +2068,7 @@ namespace KebuzForge.App
             Lang.English = english;
             Lang.Apply(this);
             TranslateCanvasTips();
+            RefreshZoomStatus();
             foreach (Form owned in OwnedForms)
                 Lang.Apply(owned);
             miLangRu.Text = english ? "  Русский" : "● Русский";

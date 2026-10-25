@@ -58,11 +58,7 @@ namespace KebuzForge.App
                 if (e.Final) SyncCanvasUi();
             };
             canvasView.SelectionChanged += (s, e) => SyncCanvasUi();
-            canvasView.ZoomChanged += (s, e) =>
-            {
-                if (_canvas is not null)
-                    lblStatusZoom.Text = $"{Lang.T("Масштаб")}: {Math.Round(canvasView.ZoomPercent)}%";
-            };
+            canvasView.ZoomChanged += (s, e) => RefreshZoomStatus();
             btnCanvasFit.Click += (s, e) => canvasView.FitToWindow();
             btnCanvasSnap.CheckedChanged += (s, e) => canvasView.SnapEnabled = btnCanvasSnap.Checked;
             canvasView.PickRequested += ShowCanvasPickMenu;
@@ -256,11 +252,18 @@ namespace KebuzForge.App
             return true;
         }
 
+        private void RefreshZoomStatus()
+        {
+            lblStatusZoom.Text = _canvas is not null
+                ? $"{Lang.T("Масштаб")}: {Math.Round(canvasView.ZoomPercent)}%"
+                : "";
+        }
+
         private void TranslateCanvasTips()
         {
             foreach (var b in new[] { btnCanvasFillPick, btnCanvasStrokePick, btnCanvasShadowPick })
                 toolTipCanvas.SetToolTip(b, Lang.T("Пипетка: щёлкните в любом месте экрана (Esc - отмена)"));
-            toolTipCanvas.SetToolTip(btnRemoveBg, Lang.T("Нажмите и щёлкайте по областям на «ПОСЛЕ», чтобы сделать их прозрачными. Похожие соседние цвета берутся по «Допуску». Каждый щелчок отменяется Ctrl+Z."));
+            toolTipCanvas.SetToolTip(btnRemoveBg, Lang.T("Нажмите и щёлкайте по областям на «ПОСЛЕ», чтобы сделать их прозрачными. Shift+щелчок убирает этот цвет по всей картинке. Похожие цвета берутся по «Допуску». Каждый щелчок отменяется Ctrl+Z."));
             toolTipCanvas.SetToolTip(chkPerceptual, Lang.T("Вкл: пиксели раскладываются по цветам так, как их видит глаз, меньше случайных точек на контурах. Выкл: простое сравнение RGB, плавный градиент на маленькой палитре не рвётся."));
         }
 

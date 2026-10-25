@@ -1010,7 +1010,7 @@
             btnRemoveBg.Size = new Size(130, 26);
             btnRemoveBg.TabIndex = 3;
             btnRemoveBg.Text = "Удалить фон";
-            toolTipCanvas.SetToolTip(btnRemoveBg, "Нажмите и щёлкайте по областям на «ПОСЛЕ», чтобы сделать их прозрачными. Похожие соседние цвета берутся по «Допуску». Каждый щелчок отменяется Ctrl+Z.");
+            toolTipCanvas.SetToolTip(btnRemoveBg, "Нажмите и щёлкайте по областям на «ПОСЛЕ», чтобы сделать их прозрачными. Shift+щелчок убирает этот цвет по всей картинке. Похожие цвета берутся по «Допуску». Каждый щелчок отменяется Ctrl+Z.");
 
             rightSplit.Dock = DockStyle.Fill;
             rightSplit.Location = new Point(0, 0);
@@ -1407,7 +1407,7 @@
             btnPaletteRamp.ForeColor = Color.White;
             btnPaletteRamp.Location = new Point(292, 3);
             btnPaletteRamp.Name = "btnPaletteRamp";
-            btnPaletteRamp.Size = new Size(120, 24);
+            btnPaletteRamp.Size = new Size(170, 24);
             btnPaletteRamp.TabIndex = 3;
             btnPaletteRamp.Text = "Тени и блики...";
             btnPaletteRamp.UseVisualStyleBackColor = false;
@@ -1416,7 +1416,7 @@
             chkPerceptual.Checked = true;
             chkPerceptual.CheckState = CheckState.Checked;
             chkPerceptual.ForeColor = Color.White;
-            chkPerceptual.Location = new Point(424, 7);
+            chkPerceptual.Location = new Point(474, 7);
             chkPerceptual.Name = "chkPerceptual";
             chkPerceptual.TabIndex = 4;
             chkPerceptual.Text = "Сравнение по восприятию";
