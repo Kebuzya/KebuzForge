@@ -51,7 +51,7 @@ namespace KebuzForge.App.Core
                 int idx = p.Y * stride + p.X * 4;
 
                 Color c = ColorAt(raw, stride, p.X, p.Y);
-                if (!Within(c, tc, tolerance)) continue;
+                if (c.A == 0 || !Within(c, tc, tolerance)) continue;
 
                 raw[idx] = raw[idx+1] = raw[idx+2] = raw[idx+3] = 0;
 

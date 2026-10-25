@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -19,6 +20,23 @@ namespace KebuzForge.App.UI
         private readonly ToolTip _tip = new();
 
         public event EventHandler<PaletteChangedEventArgs>? PaletteChanged;
+        public event EventHandler<Color?>? AddRequested;
+        public event EventHandler<int>? ColorMenuRequested;
+
+        [DefaultValue(true)]
+        public bool ShowAddTile
+        {
+            get => _showAddTile;
+            set
+            {
+                _showAddTile = value;
+                UpdatePreferredSize();
+                Invalidate();
+            }
+        }
+        private bool _showAddTile = true;
+
+        private bool HasAddTile => _showAddTile && _palette.Length < 256;
 
         public void SetHighlight(int index)
         {
@@ -79,10 +97,20 @@ namespace KebuzForge.App.UI
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.None;
 
+            if (HasAddTile)
+            {
+                var add = SwatchRect(_palette.Length);
+                using var dash = new Pen(_hovered == _palette.Length ? Color.White : Color.Gray) { DashStyle = DashStyle.Dash };
+                g.DrawRectangle(dash, add);
+                using var pf = new Font("Segoe UI", 12f);
+                var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                g.DrawString("+", pf, Brushes.Gray, add, sf);
+            }
+
             if (_palette.Length == 0)
             {
                 using var f = new Font("Segoe UI", 9);
-                g.DrawString(Core.Lang.T("Палитра пуста"), f, Brushes.Gray, Pad, Pad);
+                g.DrawString(Core.Lang.T("Палитра пуста"), f, Brushes.Gray, HasAddTile ? Pad + SwatchSize + 8 : Pad, Pad);
                 return;
             }
 
@@ -118,6 +146,8 @@ namespace KebuzForge.App.UI
                 Invalidate();
                 if (idx >= 0 && idx < _palette.Length)
                     _tip.SetToolTip(this, $"#{_palette[idx].R:X2}{_palette[idx].G:X2}{_palette[idx].B:X2}  [{idx}]");
+                else if (idx == _palette.Length)
+                    _tip.SetToolTip(this, Core.Lang.T("Добавить цвет"));
             }
         }
 
@@ -132,7 +162,16 @@ namespace KebuzForge.App.UI
         {
             base.OnMouseClick(e);
             int idx = IndexAt(e.X, e.Y);
-            if (idx < 0 || idx >= _palette.Length) return;
+            if (idx < 0) return;
+
+            if (idx == _palette.Length)
+            {
+                if (e.Button != MouseButtons.Left) return;
+                var pending = _pendingColor;
+                SetPendingColor(null);
+                AddRequested?.Invoke(this, pending);
+                return;
+            }
 
             if (e.Button == MouseButtons.Left)
             {
@@ -163,6 +202,7 @@ namespace KebuzForge.App.UI
                 var c = _palette[idx];
                 PaletteChanged?.Invoke(this,
                     new PaletteChangedEventArgs(-1, c));
+                ColorMenuRequested?.Invoke(this, idx);
             }
         }
 
@@ -183,12 +223,13 @@ namespace KebuzForge.App.UI
             int row = (y - Pad) / (SwatchSize + 2);
             if (col < 0 || col >= Cols || row < 0) return -1;
             int idx = row * Cols + col;
-            return idx < _palette.Length ? idx : -1;
+            return idx < _palette.Length || (idx == _palette.Length && HasAddTile) ? idx : -1;
         }
 
         private void UpdatePreferredSize()
         {
-            int rows = Math.Max(1, (_palette.Length + Cols - 1) / Cols);
+            int tiles = _palette.Length + (HasAddTile ? 1 : 0);
+            int rows = Math.Max(1, (tiles + Cols - 1) / Cols);
             Height = Pad * 2 + rows * (SwatchSize + 2);
         }
 

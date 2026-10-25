@@ -20,7 +20,7 @@ namespace KebuzForge.App.Core
             bool specular  = true)
         {
             int w = src.Width, h = src.Height;
-            float cx = (w - 1) / 2f, cy = (h - 1) / 2f;
+            float cx = w / 2f, cy = h / 2f;
             float r  = Math.Min(cx, cy);
 
             byte[] raw = ImageProcessor.LockCopy(src, out int stride);
@@ -36,8 +36,8 @@ namespace KebuzForge.App.Core
             {
                 for (int px = 0; px < w; px++)
                 {
-                    float nx = (px - cx) / r;
-                    float ny = (py - cy) / r;
+                    float nx = (px + 0.5f - cx) / r;
+                    float ny = (py + 0.5f - cy) / r;
                     float d2 = nx * nx + ny * ny;
 
                     int di = py * ds + px * 4;
@@ -68,8 +68,8 @@ namespace KebuzForge.App.Core
                         continue;
                     }
 
-                    int sx = Math.Clamp((int)(u * (w - 1)), 0, w - 1);
-                    int sy = Math.Clamp((int)(v * (h - 1)), 0, h - 1);
+                    int sx = Math.Clamp((int)(u * w), 0, w - 1);
+                    int sy = Math.Clamp((int)(v * h), 0, h - 1);
                     int si = sy * stride + sx * 4;
 
                     float NdotL = Math.Max(0f, LX * nx + LY * ny + LZ * nz);
@@ -110,7 +110,7 @@ namespace KebuzForge.App.Core
             bool specular    = true)
         {
             int w = src.Width, h = src.Height;
-            float cx = (w - 1) / 2f, cy = (h - 1) / 2f;
+            float cx = w / 2f, cy = h / 2f;
 
             float rx = MathF.Max(cx, 0.5f);
             float ry = MathF.Max(cy, 0.5f);
@@ -133,8 +133,8 @@ namespace KebuzForge.App.Core
                 for (int px = 0; px < w; px++)
                 {
 
-                    float nx = (px - cx) / rx;
-                    float ny = (py - cy) / ry;
+                    float nx = (px + 0.5f - cx) / rx;
+                    float ny = (py + 0.5f - cy) / ry;
 
                     int di = py * ds + px * 4;
 
@@ -209,8 +209,8 @@ namespace KebuzForge.App.Core
                         continue;
                     }
 
-                    int sx = Math.Clamp((int)(u * (w - 1)), 0, w - 1);
-                    int sy = Math.Clamp((int)(v * (h - 1)), 0, h - 1);
+                    int sx = Math.Clamp((int)(u * w), 0, w - 1);
+                    int sy = Math.Clamp((int)(v * h), 0, h - 1);
                     int si = sy * stride + sx * 4;
 
                     float NX = gnx * bulge, NY = gny * bulge, NZ = nz;
@@ -251,7 +251,7 @@ namespace KebuzForge.App.Core
             float elevation = 45f)
         {
             int w = src.Width, h = src.Height;
-            float cx = (w - 1) / 2f, cy = (h - 1) / 2f;
+            float cx = w / 2f, cy = h / 2f;
 
             byte[] raw = ImageProcessor.LockCopy(src, out int stride);
             var result  = new Bitmap(w, h, PixelFormat.Format32bppArgb);
@@ -272,7 +272,7 @@ namespace KebuzForge.App.Core
 
                     if (horizontal)
                     {
-                        nx = (px - cx) / cx;
+                        nx = (px + 0.5f - cx) / cx;
                         if (MathF.Abs(nx) >= 1f) { ClearPixel(dst, di); continue; }
                         nz = MathF.Sqrt(1f - nx * nx);
 
@@ -281,12 +281,12 @@ namespace KebuzForge.App.Core
                         float u0     = u_flat + (u_cyl - u_flat) * bulge;
                         float u      = 0.5f + (u0 - 0.5f + offsetU) / scale;
                         if (u < 0f || u > 1f) { ClearPixel(dst, di); continue; }
-                        sx = Math.Clamp((int)(u * (w - 1)), 0, w - 1);
+                        sx = Math.Clamp((int)(u * w), 0, w - 1);
                         sy = py;
                     }
                     else
                     {
-                        ny = (py - cy) / cy;
+                        ny = (py + 0.5f - cy) / cy;
                         if (MathF.Abs(ny) >= 1f) { ClearPixel(dst, di); continue; }
                         nz = MathF.Sqrt(1f - ny * ny);
 
@@ -296,7 +296,7 @@ namespace KebuzForge.App.Core
                         float v      = 0.5f + (v0 - 0.5f + offsetV) / scale;
                         if (v < 0f || v > 1f) { ClearPixel(dst, di); continue; }
                         sx = px;
-                        sy = Math.Clamp((int)(v * (h - 1)), 0, h - 1);
+                        sy = Math.Clamp((int)(v * h), 0, h - 1);
                     }
 
                     nz = MathF.Sqrt(Math.Max(0f, 1f - nx * nx - ny * ny));
@@ -336,8 +336,8 @@ namespace KebuzForge.App.Core
                 for (int px = 0; px < w; px++)
                 {
                     int di = py * ds + px * 4;
-                    float u = 0.5f + ((float)px / (w - 1) - 0.5f + offsetU) / scale;
-                    float v = 0.5f + ((float)py / (h - 1) - 0.5f + offsetV) / scale;
+                    float u = 0.5f + ((px + 0.5f) / w - 0.5f + offsetU) / scale;
+                    float v = 0.5f + ((py + 0.5f) / h - 0.5f + offsetV) / scale;
 
                     if (u < 0f || u > 1f || v < 0f || v > 1f)
                     {
@@ -345,8 +345,8 @@ namespace KebuzForge.App.Core
                         continue;
                     }
 
-                    int sx = Math.Clamp((int)(u * (w - 1)), 0, w - 1);
-                    int sy = Math.Clamp((int)(v * (h - 1)), 0, h - 1);
+                    int sx = Math.Clamp((int)(u * w), 0, w - 1);
+                    int sy = Math.Clamp((int)(v * h), 0, h - 1);
                     int si = sy * stride + sx * 4;
                     dst[di]     = raw[si];
                     dst[di + 1] = raw[si + 1];
@@ -364,10 +364,10 @@ namespace KebuzForge.App.Core
             float scale, float bulge, float offsetU, float offsetV,
             out int sx, out int sy)
         {
-            float cx = (w - 1) / 2f, cy = (h - 1) / 2f;
+            float cx = w / 2f, cy = h / 2f;
             float r  = Math.Min(cx, cy);
-            float nx = (px - cx) / r;
-            float ny = (py - cy) / r;
+            float nx = (px + 0.5f - cx) / r;
+            float ny = (py + 0.5f - cy) / r;
             float d2 = nx * nx + ny * ny;
 
             if (d2 > 1f) { sx = sy = 0; return false; }
@@ -386,8 +386,8 @@ namespace KebuzForge.App.Core
             float v   = 0.5f + (v0 - 0.5f + offsetV) / scale;
 
             if (u < 0f || u > 1f || v < 0f || v > 1f) { sx = sy = 0; return false; }
-            sx = Math.Clamp((int)(u * (w - 1)), 0, w - 1);
-            sy = Math.Clamp((int)(v * (h - 1)), 0, h - 1);
+            sx = Math.Clamp((int)(u * w), 0, w - 1);
+            sy = Math.Clamp((int)(v * h), 0, h - 1);
             return true;
         }
 
@@ -395,12 +395,12 @@ namespace KebuzForge.App.Core
             float scale, float bulge, float sharpness, bool fromRect, float offsetU, float offsetV,
             out int sx, out int sy)
         {
-            float cx = (w - 1) / 2f, cy = (h - 1) / 2f;
+            float cx = w / 2f, cy = h / 2f;
             float rx = MathF.Max(cx, 0.5f);
             float ry = MathF.Max(cy, 0.5f);
 
-            float nx = (px - cx) / rx;
-            float ny = (py - cy) / ry;
+            float nx = (px + 0.5f - cx) / rx;
+            float ny = (py + 0.5f - cy) / ry;
 
             float nz;
             if (!fromRect)
@@ -434,8 +434,8 @@ namespace KebuzForge.App.Core
             float v   = 0.5f + (v0 - 0.5f + offsetV) / scale;
 
             if (u < 0f || u > 1f || v < 0f || v > 1f) { sx = sy = 0; return false; }
-            sx = Math.Clamp((int)(u * (w - 1)), 0, w - 1);
-            sy = Math.Clamp((int)(v * (h - 1)), 0, h - 1);
+            sx = Math.Clamp((int)(u * w), 0, w - 1);
+            sy = Math.Clamp((int)(v * h), 0, h - 1);
             return true;
         }
 
@@ -443,11 +443,11 @@ namespace KebuzForge.App.Core
             bool horizontal, float scale, float bulge, float offsetU, float offsetV,
             out int sx, out int sy)
         {
-            float cx = (w - 1) / 2f, cy = (h - 1) / 2f;
+            float cx = w / 2f, cy = h / 2f;
 
             if (horizontal)
             {
-                float nx = (px - cx) / cx;
+                float nx = (px + 0.5f - cx) / cx;
                 if (MathF.Abs(nx) >= 1f) { sx = sy = 0; return false; }
                 float nz    = MathF.Sqrt(1f - nx * nx);
                 float u_cyl = MathF.Atan2(nx, nz) / (MathF.PI / 2f) * 0.5f + 0.5f;
@@ -455,12 +455,12 @@ namespace KebuzForge.App.Core
                 float u0    = u_flat + (u_cyl - u_flat) * bulge;
                 float u     = 0.5f + (u0 - 0.5f + offsetU) / scale;
                 if (u < 0f || u > 1f) { sx = sy = 0; return false; }
-                sx = Math.Clamp((int)(u * (w - 1)), 0, w - 1);
+                sx = Math.Clamp((int)(u * w), 0, w - 1);
                 sy = py;
             }
             else
             {
-                float ny = (py - cy) / cy;
+                float ny = (py + 0.5f - cy) / cy;
                 if (MathF.Abs(ny) >= 1f) { sx = sy = 0; return false; }
                 float nz    = MathF.Sqrt(1f - ny * ny);
                 float v_cyl = MathF.Atan2(ny, nz) / (MathF.PI / 2f) * 0.5f + 0.5f;
@@ -469,7 +469,7 @@ namespace KebuzForge.App.Core
                 float v     = 0.5f + (v0 - 0.5f + offsetV) / scale;
                 if (v < 0f || v > 1f) { sx = sy = 0; return false; }
                 sx = px;
-                sy = Math.Clamp((int)(v * (h - 1)), 0, h - 1);
+                sy = Math.Clamp((int)(v * h), 0, h - 1);
             }
             return true;
         }
