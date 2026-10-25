@@ -61,7 +61,7 @@ Build an icon at a large size from rectangles, ellipses, triangles, lines and ar
 
 - Pencil, line, rectangle, ellipse (**Shift** - regular shape, **Ctrl** - from center), fill, eyedropper, eraser, secondary color on right click, zoom up to 16×
 - Two layers: right after pixelization (palette, dithering and effects apply over your edits) or the final result (what you draw is what you get)
-- Background removal: press **Remove background** and click areas on the result to make them transparent, as many as needed; similar neighboring colors are taken by the tolerance, each click can be undone
+- Background removal: press **Remove background** and click areas on the result to make them transparent, as many as needed; **Shift**+click removes that color across the whole picture; similar colors are taken by the tolerance, each click can be undone
 
 ### Projects
 
