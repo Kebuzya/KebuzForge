@@ -7,14 +7,18 @@ A tool for creating pixel art and icons from regular images (Windows, WinForms, 
 ## Features
 
 - **Pixelization** - block averaging or center sampling, aspect ratio lock
-- **Palettes** - Median Cut quantization, retro palettes, per-color recoloring without re-quantization, import/export (JASC PAL, Photoshop ACT, GIMP GPL)
+- **Palettes** - quantization of the picture as it looks after the 3D effect (flat-color art keeps its exact colors and small saturated accents get their own color, photos and noisy scans use k-medians so line art keeps its pure colors), perceptual matching of pixels to the palette (CIE94, fewer stray dots on outlines; can be switched to plain RGB), retro palettes with the best N colors picked for the picture, per-color recoloring without re-quantization, adding a color by hand or the one the picture misses most, removing a color, shade and highlight ramps with a hue shift, import/export (JASC PAL, Photoshop ACT, GIMP GPL)
 - **Dithering** - Floyd–Steinberg, Bayer 4×4 / 8×8 with adjustable intensity, applied over effects
 - **3D effects** - sphere, cylinder, rounded rectangle with lighting (ambient/diffuse, light direction)
-- **Pixel editor** - pencil, line, rectangle, ellipse (Shift - regular shape, Ctrl - from center), fill, eyedropper, eraser, secondary color on right click, zoom up to 16×
+- **Pixel editor** - pencil, line, rectangle, ellipse (Shift - regular shape, Ctrl - from center), fill, eyedropper, eraser, secondary color on right click, zoom up to 16×; edit the picture right after pixelization (palette, dithering and effects apply over your edits) or the final result (what you draw is what you get)
+- **Canvas** - every opened image becomes a canvas object you can move, resize, rotate and shadow; drop or paste more images onto it, copy objects with Ctrl+drag or Ctrl+D, right-click to pick an object hidden under another, pick fill, stroke and shadow colors with an eyedropper anywhere on the screen, group objects with Ctrl+G and move, resize and rotate a group or any multi-selection as one, intersect a whole group with another object in one step, objects snap to the center and edges of the canvas and of other objects (Alt while dragging inverts it, the toolbar button turns it off), resize with Shift to keep proportions and Ctrl to scale from the center, and build an icon at a large size from rectangles, ellipses, triangles, lines, arcs with arrows and text in any installed font, with rotation, shadows and a separate color for the overlap of two objects; the pixel result updates as you draw
+- **Start screen** - the empty main window offers to open an image, start a new canvas or a blank pixel art
+- **Projects** - save everything (canvas, images, settings, palette, pixel edits) to one `.kforge` file and open it later as it was; the app asks before closing unsaved work and autosaves every 2 minutes, offering recovery after a crash
+- **Canvas zoom** - Ctrl+wheel zooms to the cursor, the wheel scrolls, the middle button or Space + mouse pans, Ctrl+0 fits the canvas
 - **Animation** - frame-by-frame GIF processing through the full pipeline, animated GIF export
 - **Export** - PNG, Indexed PNG (8 bpp), multi-size ICO, batch processing
-- **Pipeline auto-cascade** - re-pixelizing recomputes palette, dithering and effects automatically (can be turned off)
-- **Background removal**, outlines, detachable panels, dark/light/hybrid themes, presets, double-click a slider label to type an exact value
+- **Pipeline auto-cascade** - re-pixelizing automatically maps the pixels to the current palette and reapplies dithering and effects, keeping pixel edits and removed areas while the size stays the same (can be turned off); a new palette is built only by "Build palette"
+- **Background removal** by clicking areas on the result (each click makes a connected area transparent, with tolerance), outlines, detachable panels, dark/light/hybrid themes, presets, double-click a slider label to type an exact value
 - **Plugins** - extend functionality via DLLs
 - **Update notice** - on startup the app asks GitHub for the latest release and shows a small link in the status bar if a newer version exists; × hides it until the next version
 
