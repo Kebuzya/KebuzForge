@@ -10,6 +10,7 @@
 
         public int ColorCount        { get; set; } = 16;
         public int RetroPaletteIndex { get; set; } = 0;
+        public bool PerceptualMatch  { get; set; } = true;
 
         public int DitherMode      { get; set; } = 0;
         public int DitherIntensity { get; set; } = 50;

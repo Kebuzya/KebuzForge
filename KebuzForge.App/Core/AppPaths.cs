@@ -16,6 +16,8 @@ namespace KebuzForge.App.Core
 
         public static string PresetsDirectory => Path.Combine(Root, "presets");
 
+        public static string AutosaveDirectory => Path.Combine(Root, "autosave");
+
         public static string PluginsDirectory => Path.Combine(Root, "Plugins");
 
         public static string PortablePluginsDirectory =>

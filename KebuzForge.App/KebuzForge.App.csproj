@@ -20,4 +20,8 @@
     <EmbeddedResource Include="kebuforg.ico" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\KebuzForge.Canvas\KebuzForge.Canvas.csproj" />
+  </ItemGroup>
+
 </Project>

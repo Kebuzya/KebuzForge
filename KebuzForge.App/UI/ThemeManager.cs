@@ -25,6 +25,7 @@ namespace KebuzForge.App.UI
         static readonly HashSet<string> Skip = new(StringComparer.Ordinal)
         {
             "picBefore",        "picAfter",
+            "canvasView",
             "panelBeforeTitle", "panelAfterTitle",
             "lblBeforeTitle",   "lblAfterTitle",
             "btnDetachBefore",  "btnDetachAfter",
@@ -317,13 +318,15 @@ namespace KebuzForge.App.UI
 
         sealed class LightMenuRenderer : ToolStripProfessionalRenderer
         {
+            public LightMenuRenderer() => RoundedEdges = false;
+
             protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
                 => DrawThinCheck(e.Graphics, e.ImageRectangle, SystemColors.ControlText);
         }
 
         sealed class DarkMenuRenderer : ToolStripProfessionalRenderer
         {
-            public DarkMenuRenderer() : base(new DarkColors()) { }
+            public DarkMenuRenderer() : base(new DarkColors()) => RoundedEdges = false;
 
             protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
             {

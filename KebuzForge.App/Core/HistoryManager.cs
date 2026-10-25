@@ -1,18 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using KebuzForge.App.Models;
+using KebuzForge.Canvas;
 
 namespace KebuzForge.App.Core
 {
     internal sealed class HistorySnapshot
     {
         public Bitmap? Image { get; init; }
+        public Bitmap? PipelineResult { get; init; }
         public required AppSettings Settings { get; init; }
         public Bitmap? Source { get; init; }
         public byte[]? PaletteIndices { get; init; }
         public Color[] Palette { get; init; } = [];
+        public CanvasDocument? Canvas { get; init; }
+        public bool BackgroundRemoved { get; init; }
+        public PixelOverlay? PreOverlay { get; init; }
+        public PixelOverlay? FinalOverlay { get; init; }
     }
 
     internal sealed class HistoryManager : IDisposable
@@ -24,9 +29,9 @@ namespace KebuzForge.App.Core
         public bool CanUndo => _undo.Count > 0;
         public bool CanRedo => _redo.Count > 0;
 
-        public void Push(Bitmap? image, AppSettings settings, Bitmap? source, byte[]? indices, Color[] palette)
+        public void Push(HistorySnapshot current)
         {
-            _undo.AddLast(Make(image, settings, source, indices, palette));
+            _undo.AddLast(current);
             ClearList(_redo);
             while (_undo.Count > MaxDepth)
             {
@@ -35,33 +40,31 @@ namespace KebuzForge.App.Core
             }
         }
 
-        public HistorySnapshot? Undo(Bitmap? image, AppSettings settings, Bitmap? source, byte[]? indices, Color[] palette)
+        public HistorySnapshot? Undo(HistorySnapshot current)
         {
-            if (!CanUndo) return null;
-            _redo.AddLast(Make(image, settings, source, indices, palette));
+            if (!CanUndo)
+            {
+                DisposeSnapshot(current);
+                return null;
+            }
+            _redo.AddLast(current);
             var prev = _undo.Last!.Value;
             _undo.RemoveLast();
             return prev;
         }
 
-        public HistorySnapshot? Redo(Bitmap? image, AppSettings settings, Bitmap? source, byte[]? indices, Color[] palette)
+        public HistorySnapshot? Redo(HistorySnapshot current)
         {
-            if (!CanRedo) return null;
-            _undo.AddLast(Make(image, settings, source, indices, palette));
+            if (!CanRedo)
+            {
+                DisposeSnapshot(current);
+                return null;
+            }
+            _undo.AddLast(current);
             var next = _redo.Last!.Value;
             _redo.RemoveLast();
             return next;
         }
-
-        private static HistorySnapshot Make(Bitmap? image, AppSettings settings, Bitmap? source, byte[]? indices, Color[] palette) =>
-            new()
-            {
-                Image = image is null ? null : new Bitmap(image),
-                Settings = settings,
-                Source = source is null ? null : new Bitmap(source),
-                PaletteIndices = indices?.ToArray(),
-                Palette = (Color[])palette.Clone()
-            };
 
         public void Clear()
         {
@@ -79,6 +82,7 @@ namespace KebuzForge.App.Core
         private static void DisposeSnapshot(HistorySnapshot s)
         {
             s.Image?.Dispose();
+            s.PipelineResult?.Dispose();
             s.Source?.Dispose();
         }
 

@@ -13,6 +13,14 @@
 
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
+            cmsCanvasPick = new ContextMenuStrip(components);
+            toolTipCanvas = new ToolTip(components);
+            btnCanvasFillPick = new Button();
+            btnCanvasStrokePick = new Button();
+            btnCanvasShadowPick = new Button();
+            cmsPaletteColor = new ContextMenuStrip(components);
+            menuPaletteRemoveColor = new ToolStripMenuItem();
             menuStrip = new MenuStrip();
             menuFile = new ToolStripMenuItem();
             menuFileOpen = new ToolStripMenuItem();
@@ -107,7 +115,6 @@
             cmbEdgeMode = new ComboBox();
             btnEdgeColor = new Button();
             grpBackground = new GroupBox();
-            btnPickBgColor = new Button();
             lblBgTolTitle = new Label();
             nudBgTolerance = new NumericUpDown();
             btnRemoveBg = new Button();
@@ -115,7 +122,6 @@
             previewSplit = new SplitContainer();
             panelBefore = new Panel();
             picBefore = new PictureBox();
-            btnDropHint = new Button();
             panelBeforeTitle = new Panel();
             lblBeforeTitle = new Label();
             btnDetachBefore = new Button();
@@ -129,6 +135,10 @@
             editorScroll = new KebuzForge.App.UI.StableScrollPanel();
             _pixelEditor = new KebuzForge.App.UI.PixelEditorPanel();
             editorToolStrip = new ToolStrip();
+            lblEditorLayer = new ToolStripLabel();
+            btnEditorModePre = new ToolStripButton();
+            btnEditorModeFinal = new ToolStripButton();
+            sepEditorLayer = new ToolStripSeparator();
             btnToolPencil = new ToolStripButton();
             btnToolLine = new ToolStripButton();
             btnToolRect = new ToolStripButton();
@@ -153,6 +163,9 @@
             panelPaletteBar = new Panel();
             btnPickPaletteColor = new Button();
             btnDetachPalette = new Button();
+            btnAddMissingColor = new Button();
+            btnPaletteRamp = new Button();
+            chkPerceptual = new CheckBox();
             tabPageAnimation = new TabPage();
             flpFrames = new FlowLayoutPanel();
             pnlAnimToolbar = new Panel();
@@ -164,6 +177,63 @@
             btnProcessFrames = new Button();
             btnExportGif = new Button();
             btnDetachAnim = new Button();
+            tlpStart = new TableLayoutPanel();
+            btnStartOpen = new Button();
+            btnStartCanvas = new Button();
+            btnStartPixelArt = new Button();
+            lblStartHint = new Label();
+            canvasView = new KebuzForge.Canvas.CanvasView();
+            canvasToolStrip = new ToolStrip();
+            btnCanvasSelect = new ToolStripButton();
+            btnCanvasRect = new ToolStripButton();
+            btnCanvasEllipse = new ToolStripButton();
+            btnCanvasPolygon = new ToolStripButton();
+            btnCanvasLine = new ToolStripButton();
+            btnCanvasArc = new ToolStripButton();
+            btnCanvasText = new ToolStripButton();
+            menuFileNewCanvas = new ToolStripMenuItem();
+            menuFileSave = new ToolStripMenuItem();
+            menuFileSaveAs = new ToolStripMenuItem();
+            sepCanvasZoom = new ToolStripSeparator();
+            btnCanvasFit = new ToolStripButton();
+            btnCanvasSnap = new ToolStripButton();
+            tabPageCanvas = new TabPage();
+            flpCanvas = new FlowLayoutPanel();
+            grpCanvasNew = new GroupBox();
+            grpCanvasLook = new GroupBox();
+            grpCanvasShadow = new GroupBox();
+            grpCanvasText = new GroupBox();
+            grpCanvasShape = new GroupBox();
+            grpCanvasObject = new GroupBox();
+            btnCanvasNew = new Button();
+            btnCanvasAddImage = new Button();
+            btnCanvasUp = new Button();
+            btnCanvasDown = new Button();
+            btnCanvasIntersect = new Button();
+            btnCanvasGroup = new Button();
+            btnCanvasUngroup = new Button();
+            btnCanvasDelete = new Button();
+            btnCanvasFillColor = new Button();
+            btnCanvasStrokeColor = new Button();
+            btnCanvasShadowColor = new Button();
+            chkCanvasFill = new CheckBox();
+            chkCanvasStroke = new CheckBox();
+            chkCanvasShadow = new CheckBox();
+            chkCanvasBold = new CheckBox();
+            chkCanvasArrow = new CheckBox();
+            lblCanvasOpacity = new Label();
+            lblCanvasShadowX = new Label();
+            lblCanvasShadowY = new Label();
+            lblCanvasRadius = new Label();
+            lblCanvasRotation = new Label();
+            nudCanvasWidth = new NumericUpDown();
+            nudCanvasOpacity = new NumericUpDown();
+            nudCanvasShadowX = new NumericUpDown();
+            nudCanvasShadowY = new NumericUpDown();
+            nudCanvasRadius = new NumericUpDown();
+            nudCanvasRotation = new NumericUpDown();
+            txtCanvasText = new TextBox();
+            cmbCanvasFont = new ComboBox();
             menuStrip.SuspendLayout();
             toolStrip.SuspendLayout();
             statusStrip.SuspendLayout();
@@ -214,8 +284,25 @@
             editorToolStrip.SuspendLayout();
             tabPagePalette.SuspendLayout();
             panelPaletteBar.SuspendLayout();
+            cmsPaletteColor.SuspendLayout();
             tabPageAnimation.SuspendLayout();
             pnlAnimToolbar.SuspendLayout();
+            tlpStart.SuspendLayout();
+            canvasToolStrip.SuspendLayout();
+            tabPageCanvas.SuspendLayout();
+            flpCanvas.SuspendLayout();
+            grpCanvasNew.SuspendLayout();
+            grpCanvasLook.SuspendLayout();
+            grpCanvasShadow.SuspendLayout();
+            grpCanvasText.SuspendLayout();
+            grpCanvasShape.SuspendLayout();
+            grpCanvasObject.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)nudCanvasWidth).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)nudCanvasOpacity).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)nudCanvasShadowX).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)nudCanvasShadowY).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)nudCanvasRadius).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)nudCanvasRotation).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nudAnimFps).BeginInit();
             SuspendLayout();
 
@@ -225,15 +312,30 @@
             menuStrip.Size = new Size(1284, 24);
             menuStrip.TabIndex = 2;
 
-            menuFile.DropDownItems.AddRange(new ToolStripItem[] { menuFileOpen, menuFileExit });
+            menuFile.DropDownItems.AddRange(new ToolStripItem[] { menuFileNewCanvas, menuFileOpen, menuFileSave, menuFileSaveAs, menuFileExit });
             menuFile.Name = "menuFile";
             menuFile.Size = new Size(48, 20);
             menuFile.Text = "Файл";
+
+            menuFileNewCanvas.Name = "menuFileNewCanvas";
+            menuFileNewCanvas.ShortcutKeys = Keys.Control | Keys.N;
+            menuFileNewCanvas.Size = new Size(173, 22);
+            menuFileNewCanvas.Text = "Новый холст...";
 
             menuFileOpen.Name = "menuFileOpen";
             menuFileOpen.ShortcutKeys = Keys.Control | Keys.O;
             menuFileOpen.Size = new Size(173, 22);
             menuFileOpen.Text = "Открыть...";
+
+            menuFileSave.Name = "menuFileSave";
+            menuFileSave.ShortcutKeys = Keys.Control | Keys.S;
+            menuFileSave.Size = new Size(173, 22);
+            menuFileSave.Text = "Сохранить проект";
+
+            menuFileSaveAs.Name = "menuFileSaveAs";
+            menuFileSaveAs.ShortcutKeys = Keys.Control | Keys.Shift | Keys.S;
+            menuFileSaveAs.Size = new Size(173, 22);
+            menuFileSaveAs.Text = "Сохранить проект как...";
 
             menuFileExit.Name = "menuFileExit";
             menuFileExit.Size = new Size(173, 22);
@@ -533,17 +635,17 @@
 
             btnApplyPalette.Location = new Point(8, 86);
             btnApplyPalette.Name = "btnApplyPalette";
-            btnApplyPalette.Size = new Size(100, 26);
+            btnApplyPalette.Size = new Size(140, 26);
             btnApplyPalette.TabIndex = 3;
-            btnApplyPalette.Text = "Пересчитать";
+            btnApplyPalette.Text = "Подобрать палитру";
 
             btnApplyPaletteColors.Location = new Point(104, 118);
             btnApplyPaletteColors.Name = "btnApplyPaletteColors";
             btnApplyPaletteColors.Size = new Size(148, 26);
             btnApplyPaletteColors.TabIndex = 6;
-            btnApplyPaletteColors.Text = "Применить цвета";
+            btnApplyPaletteColors.Text = "Разложить по палитре";
 
-            btnSavePalette.Location = new Point(114, 86);
+            btnSavePalette.Location = new Point(154, 86);
             btnSavePalette.Name = "btnSavePalette";
             btnSavePalette.Size = new Size(90, 26);
             btnSavePalette.TabIndex = 4;
@@ -879,42 +981,36 @@
             btnEdgeColor.Text = "Цвет обводки";
             btnEdgeColor.UseVisualStyleBackColor = false;
 
-            grpBackground.Controls.Add(btnPickBgColor);
             grpBackground.Controls.Add(lblBgTolTitle);
             grpBackground.Controls.Add(nudBgTolerance);
             grpBackground.Controls.Add(btnRemoveBg);
             grpBackground.Location = new Point(6, 1306);
             grpBackground.Name = "grpBackground";
-            grpBackground.Size = new Size(260, 116);
+            grpBackground.Size = new Size(260, 86);
             grpBackground.TabIndex = 6;
             grpBackground.TabStop = false;
             grpBackground.Text = "Фон";
 
-            btnPickBgColor.Location = new Point(8, 22);
-            btnPickBgColor.Name = "btnPickBgColor";
-            btnPickBgColor.Size = new Size(160, 26);
-            btnPickBgColor.TabIndex = 0;
-            btnPickBgColor.Text = "Выбрать цвет фона";
-
-            lblBgTolTitle.Location = new Point(8, 57);
+            lblBgTolTitle.Location = new Point(8, 25);
             lblBgTolTitle.Name = "lblBgTolTitle";
             lblBgTolTitle.Size = new Size(52, 20);
             lblBgTolTitle.TabIndex = 1;
             lblBgTolTitle.Text = "Допуск:";
             lblBgTolTitle.TextAlign = ContentAlignment.MiddleRight;
 
-            nudBgTolerance.Location = new Point(64, 55);
+            nudBgTolerance.Location = new Point(64, 23);
             nudBgTolerance.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
             nudBgTolerance.Name = "nudBgTolerance";
             nudBgTolerance.Size = new Size(52, 23);
             nudBgTolerance.TabIndex = 2;
             nudBgTolerance.Value = new decimal(new int[] { 15, 0, 0, 0 });
 
-            btnRemoveBg.Location = new Point(8, 82);
+            btnRemoveBg.Location = new Point(8, 52);
             btnRemoveBg.Name = "btnRemoveBg";
             btnRemoveBg.Size = new Size(130, 26);
             btnRemoveBg.TabIndex = 3;
             btnRemoveBg.Text = "Удалить фон";
+            toolTipCanvas.SetToolTip(btnRemoveBg, "Нажмите и щёлкайте по областям на «ПОСЛЕ», чтобы сделать их прозрачными. Похожие соседние цвета берутся по «Допуску». Каждый щелчок отменяется Ctrl+Z.");
 
             rightSplit.Dock = DockStyle.Fill;
             rightSplit.Location = new Point(0, 0);
@@ -941,33 +1037,16 @@
             previewSplit.SplitterDistance = 575;
             previewSplit.TabIndex = 0;
 
-            panelBefore.Controls.Add(btnDropHint);
+            panelBefore.Controls.Add(canvasView);
+            panelBefore.Controls.Add(tlpStart);
             panelBefore.Controls.Add(picBefore);
+            panelBefore.Controls.Add(canvasToolStrip);
             panelBefore.Controls.Add(panelBeforeTitle);
             panelBefore.Dock = DockStyle.Fill;
             panelBefore.Location = new Point(0, 0);
             panelBefore.Name = "panelBefore";
             panelBefore.Size = new Size(575, 274);
             panelBefore.TabIndex = 0;
-
-            btnDropHint.AllowDrop = true;
-            btnDropHint.BackColor = Color.FromArgb(28, 28, 28);
-            btnDropHint.Cursor = Cursors.Hand;
-            btnDropHint.Dock = DockStyle.Fill;
-            btnDropHint.FlatAppearance.BorderColor = Color.FromArgb(80, 80, 88);
-            btnDropHint.FlatAppearance.MouseDownBackColor = Color.FromArgb(38, 38, 42);
-            btnDropHint.FlatAppearance.MouseOverBackColor = Color.FromArgb(34, 34, 38);
-            btnDropHint.FlatStyle = FlatStyle.Flat;
-            btnDropHint.Font = new Font("Segoe UI", 11F);
-            btnDropHint.ForeColor = Color.FromArgb(160, 160, 168);
-            btnDropHint.Location = new Point(0, 24);
-            btnDropHint.Name = "btnDropHint";
-            btnDropHint.Size = new Size(575, 250);
-            btnDropHint.TabIndex = 2;
-            btnDropHint.TabStop = false;
-            btnDropHint.Tag = "notheme";
-            btnDropHint.Text = "📂\n\nПеретащите изображение сюда\nили нажмите, чтобы выбрать файл\n\nСовет: лучше всего подходят\nквадратные изображения (1:1)";
-            btnDropHint.UseVisualStyleBackColor = false;
 
             picBefore.AllowDrop = true;
             picBefore.BackColor = Color.FromArgb(28, 28, 28);
@@ -1065,6 +1144,7 @@
             tabBottom.Controls.Add(tabPageEditor);
             tabBottom.Controls.Add(tabPagePalette);
             tabBottom.Controls.Add(tabPageAnimation);
+            tabBottom.Controls.Add(tabPageCanvas);
             tabBottom.Dock = DockStyle.Fill;
             tabBottom.Location = new Point(0, 0);
             tabBottom.Name = "tabBottom";
@@ -1102,11 +1182,28 @@
 
             editorToolStrip.BackColor = Color.FromArgb(230, 230, 230);
             editorToolStrip.GripStyle = ToolStripGripStyle.Hidden;
-            editorToolStrip.Items.AddRange(new ToolStripItem[] { btnToolPencil, btnToolLine, btnToolRect, btnToolEllipse, btnToolFill, btnToolEyedrop, btnToolEraser, btnZoom1, btnZoom2, btnZoom4, btnZoom8, btnZoom16, btnEditorColor, btnEditorColor2, chkEditorPaletteOnly, chkEraserTransparent, chkRmbEraser, btnEditorApply, btnDetachEditor });
+            editorToolStrip.Items.AddRange(new ToolStripItem[] { lblEditorLayer, btnEditorModePre, btnEditorModeFinal, sepEditorLayer, btnToolPencil, btnToolLine, btnToolRect, btnToolEllipse, btnToolFill, btnToolEyedrop, btnToolEraser, btnZoom1, btnZoom2, btnZoom4, btnZoom8, btnZoom16, btnEditorColor, btnEditorColor2, chkEditorPaletteOnly, chkEraserTransparent, chkRmbEraser, btnEditorApply, btnDetachEditor });
             editorToolStrip.Location = new Point(0, 0);
             editorToolStrip.Name = "editorToolStrip";
             editorToolStrip.Size = new Size(932, 32);
             editorToolStrip.TabIndex = 1;
+
+            lblEditorLayer.Name = "lblEditorLayer";
+            lblEditorLayer.Text = "Слой:";
+
+            btnEditorModePre.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnEditorModePre.Name = "btnEditorModePre";
+            btnEditorModePre.Text = "После пикселизации";
+            btnEditorModePre.ToolTipText = "Рисовать по картинке сразу после пикселизации: палитра, дизеринг и эффекты ложатся поверх правок";
+
+            btnEditorModeFinal.Checked = true;
+            btnEditorModeFinal.CheckState = CheckState.Checked;
+            btnEditorModeFinal.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnEditorModeFinal.Name = "btnEditorModeFinal";
+            btnEditorModeFinal.Text = "Итог";
+            btnEditorModeFinal.ToolTipText = "Рисовать по готовому результату: что нарисовано, то и будет";
+
+            sepEditorLayer.Name = "sepEditorLayer";
 
             btnToolPencil.Checked = true;
             btnToolPencil.CheckOnClick = true;
@@ -1229,9 +1326,8 @@
 
             btnEditorApply.DisplayStyle = ToolStripItemDisplayStyle.Text;
             btnEditorApply.Name = "btnEditorApply";
-            btnEditorApply.Size = new Size(74, 29);
-            btnEditorApply.Text = "В результат";
-            btnEditorApply.ToolTipText = "Скопировать из редактора в результат";
+            btnEditorApply.Text = "На слой пикселизации";
+            btnEditorApply.ToolTipText = "Перенести правки итога на слой после пикселизации: они переживут смену палитры и эффектов";
 
             btnDetachEditor.Alignment = ToolStripItemAlignment.Right;
             btnDetachEditor.DisplayStyle = ToolStripItemDisplayStyle.Text;
@@ -1257,6 +1353,9 @@
             panelPaletteBar.BackColor = Color.FromArgb(45, 45, 48);
             panelPaletteBar.Controls.Add(btnPickPaletteColor);
             panelPaletteBar.Controls.Add(btnDetachPalette);
+            panelPaletteBar.Controls.Add(btnAddMissingColor);
+            panelPaletteBar.Controls.Add(btnPaletteRamp);
+            panelPaletteBar.Controls.Add(chkPerceptual);
             panelPaletteBar.Dock = DockStyle.Top;
             panelPaletteBar.Location = new Point(0, 0);
             panelPaletteBar.Name = "panelPaletteBar";
@@ -1288,6 +1387,40 @@
             btnDetachPalette.Text = "⊡";
             btnDetachPalette.UseVisualStyleBackColor = false;
             btnDetachPalette.Click += btnDetachPalette_Click;
+
+            btnAddMissingColor.BackColor = Color.FromArgb(60, 60, 60);
+            btnAddMissingColor.Cursor = Cursors.Hand;
+            btnAddMissingColor.FlatAppearance.BorderColor = Color.FromArgb(80, 80, 80);
+            btnAddMissingColor.FlatStyle = FlatStyle.Flat;
+            btnAddMissingColor.ForeColor = Color.White;
+            btnAddMissingColor.Location = new Point(126, 3);
+            btnAddMissingColor.Name = "btnAddMissingColor";
+            btnAddMissingColor.Size = new Size(160, 24);
+            btnAddMissingColor.TabIndex = 2;
+            btnAddMissingColor.Text = "Добавить недостающий";
+            btnAddMissingColor.UseVisualStyleBackColor = false;
+
+            btnPaletteRamp.BackColor = Color.FromArgb(60, 60, 60);
+            btnPaletteRamp.Cursor = Cursors.Hand;
+            btnPaletteRamp.FlatAppearance.BorderColor = Color.FromArgb(80, 80, 80);
+            btnPaletteRamp.FlatStyle = FlatStyle.Flat;
+            btnPaletteRamp.ForeColor = Color.White;
+            btnPaletteRamp.Location = new Point(292, 3);
+            btnPaletteRamp.Name = "btnPaletteRamp";
+            btnPaletteRamp.Size = new Size(120, 24);
+            btnPaletteRamp.TabIndex = 3;
+            btnPaletteRamp.Text = "Тени и блики...";
+            btnPaletteRamp.UseVisualStyleBackColor = false;
+
+            chkPerceptual.AutoSize = true;
+            chkPerceptual.Checked = true;
+            chkPerceptual.CheckState = CheckState.Checked;
+            chkPerceptual.ForeColor = Color.White;
+            chkPerceptual.Location = new Point(424, 7);
+            chkPerceptual.Name = "chkPerceptual";
+            chkPerceptual.TabIndex = 4;
+            chkPerceptual.Text = "Сравнение по восприятию";
+            toolTipCanvas.SetToolTip(chkPerceptual, "Вкл: пиксели раскладываются по цветам так, как их видит глаз, меньше случайных точек на контурах. Выкл: простое сравнение RGB, плавный градиент на маленькой палитре не рвётся.");
 
             tabPageAnimation.Controls.Add(flpFrames);
             tabPageAnimation.Controls.Add(pnlAnimToolbar);
@@ -1378,6 +1511,500 @@
             btnDetachAnim.Text = "⊡";
             btnDetachAnim.UseVisualStyleBackColor = false;
 
+            tlpStart.AllowDrop = true;
+            tlpStart.BackColor = Color.FromArgb(28, 28, 28);
+            tlpStart.ColumnCount = 1;
+            tlpStart.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            tlpStart.Controls.Add(btnStartOpen, 0, 1);
+            tlpStart.Controls.Add(btnStartCanvas, 0, 2);
+            tlpStart.Controls.Add(btnStartPixelArt, 0, 3);
+            tlpStart.Controls.Add(lblStartHint, 0, 4);
+            tlpStart.Dock = DockStyle.Fill;
+            tlpStart.Location = new Point(0, 24);
+            tlpStart.Name = "tlpStart";
+            tlpStart.RowCount = 6;
+            tlpStart.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+            tlpStart.RowStyles.Add(new RowStyle(SizeType.Absolute, 54F));
+            tlpStart.RowStyles.Add(new RowStyle(SizeType.Absolute, 54F));
+            tlpStart.RowStyles.Add(new RowStyle(SizeType.Absolute, 54F));
+            tlpStart.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
+            tlpStart.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+            tlpStart.Size = new Size(575, 250);
+            tlpStart.TabIndex = 2;
+            tlpStart.Tag = "notheme";
+
+            btnStartOpen.Anchor = AnchorStyles.None;
+            btnStartOpen.AllowDrop = true;
+            btnStartOpen.BackColor = Color.FromArgb(40, 40, 46);
+            btnStartOpen.Cursor = Cursors.Hand;
+            btnStartOpen.FlatAppearance.BorderColor = Color.FromArgb(80, 80, 88);
+            btnStartOpen.FlatAppearance.MouseOverBackColor = Color.FromArgb(52, 52, 60);
+            btnStartOpen.FlatStyle = FlatStyle.Flat;
+            btnStartOpen.Font = new Font("Segoe UI", 11F);
+            btnStartOpen.ForeColor = Color.FromArgb(220, 220, 226);
+            btnStartOpen.Name = "btnStartOpen";
+            btnStartOpen.Size = new Size(260, 44);
+            btnStartOpen.TabIndex = 0;
+            btnStartOpen.Tag = "notheme";
+            btnStartOpen.Text = "Открыть изображение";
+            btnStartOpen.UseVisualStyleBackColor = false;
+
+            btnStartCanvas.Anchor = AnchorStyles.None;
+            btnStartCanvas.AllowDrop = true;
+            btnStartCanvas.BackColor = Color.FromArgb(40, 40, 46);
+            btnStartCanvas.Cursor = Cursors.Hand;
+            btnStartCanvas.FlatAppearance.BorderColor = Color.FromArgb(80, 80, 88);
+            btnStartCanvas.FlatAppearance.MouseOverBackColor = Color.FromArgb(52, 52, 60);
+            btnStartCanvas.FlatStyle = FlatStyle.Flat;
+            btnStartCanvas.Font = new Font("Segoe UI", 11F);
+            btnStartCanvas.ForeColor = Color.FromArgb(220, 220, 226);
+            btnStartCanvas.Name = "btnStartCanvas";
+            btnStartCanvas.Size = new Size(260, 44);
+            btnStartCanvas.TabIndex = 1;
+            btnStartCanvas.Tag = "notheme";
+            btnStartCanvas.Text = "Новый холст";
+            btnStartCanvas.UseVisualStyleBackColor = false;
+
+            btnStartPixelArt.Anchor = AnchorStyles.None;
+            btnStartPixelArt.AllowDrop = true;
+            btnStartPixelArt.BackColor = Color.FromArgb(40, 40, 46);
+            btnStartPixelArt.Cursor = Cursors.Hand;
+            btnStartPixelArt.FlatAppearance.BorderColor = Color.FromArgb(80, 80, 88);
+            btnStartPixelArt.FlatAppearance.MouseOverBackColor = Color.FromArgb(52, 52, 60);
+            btnStartPixelArt.FlatStyle = FlatStyle.Flat;
+            btnStartPixelArt.Font = new Font("Segoe UI", 11F);
+            btnStartPixelArt.ForeColor = Color.FromArgb(220, 220, 226);
+            btnStartPixelArt.Name = "btnStartPixelArt";
+            btnStartPixelArt.Size = new Size(260, 44);
+            btnStartPixelArt.TabIndex = 2;
+            btnStartPixelArt.Tag = "notheme";
+            btnStartPixelArt.Text = "Новый пиксель-арт";
+            btnStartPixelArt.UseVisualStyleBackColor = false;
+
+            lblStartHint.Anchor = AnchorStyles.Top;
+            lblStartHint.AutoSize = true;
+            lblStartHint.ForeColor = Color.FromArgb(150, 150, 158);
+            lblStartHint.Name = "lblStartHint";
+            lblStartHint.Padding = new Padding(0, 8, 0, 0);
+            lblStartHint.TabIndex = 3;
+            lblStartHint.Tag = "notheme";
+            lblStartHint.Text = "или перетащите изображение сюда";
+
+            cmsCanvasPick.Name = "cmsCanvasPick";
+            cmsCanvasPick.Size = new Size(61, 4);
+
+            cmsPaletteColor.Items.AddRange(new ToolStripItem[] { menuPaletteRemoveColor });
+            cmsPaletteColor.Name = "cmsPaletteColor";
+            cmsPaletteColor.Size = new Size(150, 26);
+
+            menuPaletteRemoveColor.Name = "menuPaletteRemoveColor";
+            menuPaletteRemoveColor.Size = new Size(149, 22);
+            menuPaletteRemoveColor.Text = "Удалить цвет";
+
+            canvasView.AllowDrop = true;
+            canvasView.BackColor = Color.FromArgb(28, 28, 28);
+            canvasView.Dock = DockStyle.Fill;
+            canvasView.Location = new Point(32, 24);
+            canvasView.Name = "canvasView";
+            canvasView.Size = new Size(543, 250);
+            canvasView.TabIndex = 3;
+            canvasView.Visible = false;
+
+            sepCanvasZoom.Name = "sepCanvasZoom";
+
+            btnCanvasFit.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnCanvasFit.Font = new Font("Segoe UI", 12F);
+            btnCanvasFit.Name = "btnCanvasFit";
+            btnCanvasFit.Size = new Size(29, 28);
+            btnCanvasFit.Text = "⤢";
+            btnCanvasFit.ToolTipText = "Вписать холст в окно (Ctrl+0). Приближение: Ctrl+колесо. Перемещение: средняя кнопка мыши или пробел + мышь";
+
+            btnCanvasSnap.Checked = true;
+            btnCanvasSnap.CheckOnClick = true;
+            btnCanvasSnap.CheckState = CheckState.Checked;
+            btnCanvasSnap.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnCanvasSnap.Font = new Font("Segoe UI Symbol", 12F);
+            btnCanvasSnap.Name = "btnCanvasSnap";
+            btnCanvasSnap.Size = new Size(29, 28);
+            btnCanvasSnap.Text = "⌖";
+            btnCanvasSnap.ToolTipText = "Привязка к центру и краям холста и других объектов (Alt при перетаскивании - временно наоборот)";
+
+            canvasToolStrip.Dock = DockStyle.Left;
+            canvasToolStrip.GripStyle = ToolStripGripStyle.Hidden;
+            canvasToolStrip.Items.AddRange(new ToolStripItem[] { btnCanvasSelect, btnCanvasRect, btnCanvasEllipse, btnCanvasPolygon, btnCanvasLine, btnCanvasArc, btnCanvasText, sepCanvasZoom, btnCanvasFit, btnCanvasSnap });
+            canvasToolStrip.LayoutStyle = ToolStripLayoutStyle.VerticalStackWithOverflow;
+            canvasToolStrip.Location = new Point(0, 24);
+            canvasToolStrip.Name = "canvasToolStrip";
+            canvasToolStrip.Size = new Size(32, 250);
+            canvasToolStrip.TabIndex = 4;
+            canvasToolStrip.Visible = false;
+
+            btnCanvasSelect.Checked = true;
+            btnCanvasSelect.CheckState = CheckState.Checked;
+            btnCanvasSelect.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnCanvasSelect.Font = new Font("Segoe UI", 12F);
+            btnCanvasSelect.Name = "btnCanvasSelect";
+            btnCanvasSelect.Size = new Size(29, 28);
+            btnCanvasSelect.Text = "↖";
+            btnCanvasSelect.ToolTipText = "Выбор: щелчок выделяет, Shift - добавить к выделению, правая кнопка - выбрать объект под другим, тянуть - двигать, Ctrl + тянуть - копировать, Ctrl+D - дублировать, кружок сверху - повернуть; маркеры: Shift - пропорции, Ctrl - от центра";
+
+            btnCanvasRect.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnCanvasRect.Font = new Font("Segoe UI", 12F);
+            btnCanvasRect.Name = "btnCanvasRect";
+            btnCanvasRect.Size = new Size(29, 28);
+            btnCanvasRect.Text = "▭";
+            btnCanvasRect.ToolTipText = "Прямоугольник (Shift - квадрат, Ctrl - от центра)";
+
+            btnCanvasEllipse.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnCanvasEllipse.Font = new Font("Segoe UI", 12F);
+            btnCanvasEllipse.Name = "btnCanvasEllipse";
+            btnCanvasEllipse.Size = new Size(29, 28);
+            btnCanvasEllipse.Text = "◯";
+            btnCanvasEllipse.ToolTipText = "Эллипс (Shift - круг, Ctrl - от центра)";
+
+            btnCanvasPolygon.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnCanvasPolygon.Font = new Font("Segoe UI", 12F);
+            btnCanvasPolygon.Name = "btnCanvasPolygon";
+            btnCanvasPolygon.Size = new Size(29, 28);
+            btnCanvasPolygon.Text = "△";
+            btnCanvasPolygon.ToolTipText = "Треугольник (Shift - ровный, Ctrl - от центра)";
+
+            btnCanvasLine.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnCanvasLine.Font = new Font("Segoe UI", 12F);
+            btnCanvasLine.Name = "btnCanvasLine";
+            btnCanvasLine.Size = new Size(29, 28);
+            btnCanvasLine.Text = "╱";
+            btnCanvasLine.ToolTipText = "Линия (Shift - шаг 45°)";
+
+            btnCanvasArc.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnCanvasArc.Font = new Font("Segoe UI", 12F);
+            btnCanvasArc.Name = "btnCanvasArc";
+            btnCanvasArc.Size = new Size(29, 28);
+            btnCanvasArc.Text = "◠";
+            btnCanvasArc.ToolTipText = "Дуга: жёлтые ромбы на концах меняют её длину";
+
+            btnCanvasText.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            btnCanvasText.Font = new Font("Segoe UI", 12F);
+            btnCanvasText.Name = "btnCanvasText";
+            btnCanvasText.Size = new Size(29, 28);
+            btnCanvasText.Text = "T";
+            btnCanvasText.ToolTipText = "Текст: введите его во вкладке «Холст», затем щёлкните или растяните на холсте";
+
+            tabPageCanvas.Controls.Add(flpCanvas);
+            tabPageCanvas.Location = new Point(4, 24);
+            tabPageCanvas.Name = "tabPageCanvas";
+            tabPageCanvas.Size = new Size(932, 402);
+            tabPageCanvas.TabIndex = 3;
+            tabPageCanvas.Text = "Холст";
+
+            flpCanvas.AutoScroll = true;
+            flpCanvas.Controls.Add(grpCanvasNew);
+            flpCanvas.Controls.Add(grpCanvasLook);
+            flpCanvas.Controls.Add(grpCanvasShadow);
+            flpCanvas.Controls.Add(grpCanvasText);
+            flpCanvas.Controls.Add(grpCanvasShape);
+            flpCanvas.Controls.Add(grpCanvasObject);
+            flpCanvas.Dock = DockStyle.Fill;
+            flpCanvas.Location = new Point(0, 0);
+            flpCanvas.Name = "flpCanvas";
+            flpCanvas.Padding = new Padding(4);
+            flpCanvas.Size = new Size(932, 402);
+            flpCanvas.TabIndex = 0;
+
+            grpCanvasNew.Controls.Add(btnCanvasNew);
+            grpCanvasNew.Controls.Add(btnCanvasAddImage);
+            grpCanvasNew.Name = "grpCanvasNew";
+            grpCanvasNew.Size = new Size(200, 118);
+            grpCanvasNew.TabIndex = 0;
+            grpCanvasNew.TabStop = false;
+            grpCanvasNew.Text = "Холст";
+
+            grpCanvasLook.Controls.Add(chkCanvasFill);
+            grpCanvasLook.Controls.Add(btnCanvasFillColor);
+            grpCanvasLook.Controls.Add(btnCanvasFillPick);
+            grpCanvasLook.Controls.Add(btnCanvasStrokePick);
+            grpCanvasLook.Controls.Add(chkCanvasStroke);
+            grpCanvasLook.Controls.Add(btnCanvasStrokeColor);
+            grpCanvasLook.Controls.Add(nudCanvasWidth);
+            grpCanvasLook.Controls.Add(lblCanvasOpacity);
+            grpCanvasLook.Controls.Add(nudCanvasOpacity);
+            grpCanvasLook.Name = "grpCanvasLook";
+            grpCanvasLook.Size = new Size(226, 118);
+            grpCanvasLook.TabIndex = 1;
+            grpCanvasLook.TabStop = false;
+            grpCanvasLook.Text = "Оформление";
+
+            grpCanvasShadow.Controls.Add(chkCanvasShadow);
+            grpCanvasShadow.Controls.Add(btnCanvasShadowColor);
+            grpCanvasShadow.Controls.Add(btnCanvasShadowPick);
+            grpCanvasShadow.Controls.Add(lblCanvasShadowX);
+            grpCanvasShadow.Controls.Add(nudCanvasShadowX);
+            grpCanvasShadow.Controls.Add(lblCanvasShadowY);
+            grpCanvasShadow.Controls.Add(nudCanvasShadowY);
+            grpCanvasShadow.Name = "grpCanvasShadow";
+            grpCanvasShadow.Size = new Size(190, 118);
+            grpCanvasShadow.TabIndex = 2;
+            grpCanvasShadow.TabStop = false;
+            grpCanvasShadow.Text = "Тень";
+
+            grpCanvasText.Controls.Add(txtCanvasText);
+            grpCanvasText.Controls.Add(cmbCanvasFont);
+            grpCanvasText.Controls.Add(chkCanvasBold);
+            grpCanvasText.Name = "grpCanvasText";
+            grpCanvasText.Size = new Size(200, 118);
+            grpCanvasText.TabIndex = 3;
+            grpCanvasText.TabStop = false;
+            grpCanvasText.Text = "Текст";
+
+            grpCanvasShape.Controls.Add(chkCanvasArrow);
+            grpCanvasShape.Controls.Add(lblCanvasRadius);
+            grpCanvasShape.Controls.Add(nudCanvasRadius);
+            grpCanvasShape.Controls.Add(lblCanvasRotation);
+            grpCanvasShape.Controls.Add(nudCanvasRotation);
+            grpCanvasShape.Name = "grpCanvasShape";
+            grpCanvasShape.Size = new Size(190, 118);
+            grpCanvasShape.TabIndex = 4;
+            grpCanvasShape.TabStop = false;
+            grpCanvasShape.Text = "Фигура";
+
+            grpCanvasObject.Controls.Add(btnCanvasUp);
+            grpCanvasObject.Controls.Add(btnCanvasDown);
+            grpCanvasObject.Controls.Add(btnCanvasGroup);
+            grpCanvasObject.Controls.Add(btnCanvasUngroup);
+            grpCanvasObject.Controls.Add(btnCanvasIntersect);
+            grpCanvasObject.Controls.Add(btnCanvasDelete);
+            grpCanvasObject.Name = "grpCanvasObject";
+            grpCanvasObject.Size = new Size(186, 148);
+            grpCanvasObject.TabIndex = 5;
+            grpCanvasObject.TabStop = false;
+            grpCanvasObject.Text = "Объект";
+
+            btnCanvasNew.Location = new Point(8, 22);
+            btnCanvasNew.Name = "btnCanvasNew";
+            btnCanvasNew.Size = new Size(184, 28);
+            btnCanvasNew.TabIndex = 0;
+            btnCanvasNew.Text = "Новый холст...";
+
+            btnCanvasAddImage.Location = new Point(8, 56);
+            btnCanvasAddImage.Name = "btnCanvasAddImage";
+            btnCanvasAddImage.Size = new Size(184, 28);
+            btnCanvasAddImage.TabIndex = 1;
+            btnCanvasAddImage.Text = "Добавить картинку...";
+
+            btnCanvasUp.Location = new Point(10, 22);
+            btnCanvasUp.Name = "btnCanvasUp";
+            btnCanvasUp.Size = new Size(80, 26);
+            btnCanvasUp.TabIndex = 0;
+            btnCanvasUp.Text = "Выше";
+
+            btnCanvasDown.Location = new Point(96, 22);
+            btnCanvasDown.Name = "btnCanvasDown";
+            btnCanvasDown.Size = new Size(80, 26);
+            btnCanvasDown.TabIndex = 1;
+            btnCanvasDown.Text = "Ниже";
+
+            btnCanvasGroup.Location = new Point(10, 52);
+            btnCanvasGroup.Name = "btnCanvasGroup";
+            btnCanvasGroup.Size = new Size(80, 26);
+            btnCanvasGroup.TabIndex = 2;
+            btnCanvasGroup.Text = "Группа";
+
+            btnCanvasUngroup.Location = new Point(96, 52);
+            btnCanvasUngroup.Name = "btnCanvasUngroup";
+            btnCanvasUngroup.Size = new Size(80, 26);
+            btnCanvasUngroup.TabIndex = 3;
+            btnCanvasUngroup.Text = "Без группы";
+
+            btnCanvasIntersect.Location = new Point(10, 82);
+            btnCanvasIntersect.Name = "btnCanvasIntersect";
+            btnCanvasIntersect.Size = new Size(166, 26);
+            btnCanvasIntersect.TabIndex = 4;
+            btnCanvasIntersect.Text = "Пересечение";
+
+            btnCanvasDelete.Location = new Point(10, 112);
+            btnCanvasDelete.Name = "btnCanvasDelete";
+            btnCanvasDelete.Size = new Size(166, 26);
+            btnCanvasDelete.TabIndex = 5;
+            btnCanvasDelete.Text = "Удалить";
+
+            btnCanvasFillPick.FlatStyle = FlatStyle.Flat;
+            btnCanvasFillPick.Font = new Font("Segoe UI Symbol", 9F);
+            btnCanvasFillPick.Location = new Point(140, 21);
+            btnCanvasFillPick.Name = "btnCanvasFillPick";
+            btnCanvasFillPick.Size = new Size(24, 24);
+            btnCanvasFillPick.TabIndex = 9;
+            btnCanvasFillPick.Text = "⊙";
+            toolTipCanvas.SetToolTip(btnCanvasFillPick, "Пипетка: щёлкните в любом месте экрана (Esc - отмена)");
+
+            btnCanvasStrokePick.FlatStyle = FlatStyle.Flat;
+            btnCanvasStrokePick.Font = new Font("Segoe UI Symbol", 9F);
+            btnCanvasStrokePick.Location = new Point(140, 51);
+            btnCanvasStrokePick.Name = "btnCanvasStrokePick";
+            btnCanvasStrokePick.Size = new Size(24, 24);
+            btnCanvasStrokePick.TabIndex = 10;
+            btnCanvasStrokePick.Text = "⊙";
+            toolTipCanvas.SetToolTip(btnCanvasStrokePick, "Пипетка: щёлкните в любом месте экрана (Esc - отмена)");
+
+            btnCanvasShadowPick.FlatStyle = FlatStyle.Flat;
+            btnCanvasShadowPick.Font = new Font("Segoe UI Symbol", 9F);
+            btnCanvasShadowPick.Location = new Point(140, 21);
+            btnCanvasShadowPick.Name = "btnCanvasShadowPick";
+            btnCanvasShadowPick.Size = new Size(24, 24);
+            btnCanvasShadowPick.TabIndex = 9;
+            btnCanvasShadowPick.Text = "⊙";
+            toolTipCanvas.SetToolTip(btnCanvasShadowPick, "Пипетка: щёлкните в любом месте экрана (Esc - отмена)");
+
+            btnCanvasFillColor.BackColor = Color.White;
+            btnCanvasFillColor.FlatStyle = FlatStyle.Flat;
+            btnCanvasFillColor.Location = new Point(110, 21);
+            btnCanvasFillColor.Name = "btnCanvasFillColor";
+            btnCanvasFillColor.Size = new Size(28, 24);
+            btnCanvasFillColor.TabIndex = 1;
+            btnCanvasFillColor.Tag = "notheme";
+            btnCanvasFillColor.UseVisualStyleBackColor = false;
+
+            btnCanvasStrokeColor.BackColor = Color.FromArgb(255, 102, 0);
+            btnCanvasStrokeColor.FlatStyle = FlatStyle.Flat;
+            btnCanvasStrokeColor.Location = new Point(110, 51);
+            btnCanvasStrokeColor.Name = "btnCanvasStrokeColor";
+            btnCanvasStrokeColor.Size = new Size(28, 24);
+            btnCanvasStrokeColor.TabIndex = 3;
+            btnCanvasStrokeColor.Tag = "notheme";
+            btnCanvasStrokeColor.UseVisualStyleBackColor = false;
+
+            btnCanvasShadowColor.BackColor = Color.FromArgb(255, 102, 0);
+            btnCanvasShadowColor.FlatStyle = FlatStyle.Flat;
+            btnCanvasShadowColor.Location = new Point(110, 21);
+            btnCanvasShadowColor.Name = "btnCanvasShadowColor";
+            btnCanvasShadowColor.Size = new Size(28, 24);
+            btnCanvasShadowColor.TabIndex = 1;
+            btnCanvasShadowColor.Tag = "notheme";
+            btnCanvasShadowColor.UseVisualStyleBackColor = false;
+
+            chkCanvasFill.AutoSize = true;
+            chkCanvasFill.Checked = true;
+            chkCanvasFill.CheckState = CheckState.Checked;
+            chkCanvasFill.Location = new Point(10, 24);
+            chkCanvasFill.Name = "chkCanvasFill";
+            chkCanvasFill.TabIndex = 0;
+            chkCanvasFill.Text = "Заливка";
+
+            chkCanvasStroke.AutoSize = true;
+            chkCanvasStroke.Location = new Point(10, 54);
+            chkCanvasStroke.Name = "chkCanvasStroke";
+            chkCanvasStroke.TabIndex = 2;
+            chkCanvasStroke.Text = "Обводка";
+
+            chkCanvasShadow.AutoSize = true;
+            chkCanvasShadow.Location = new Point(10, 24);
+            chkCanvasShadow.Name = "chkCanvasShadow";
+            chkCanvasShadow.TabIndex = 0;
+            chkCanvasShadow.Text = "Включить";
+
+            chkCanvasBold.AutoSize = true;
+            chkCanvasBold.Checked = true;
+            chkCanvasBold.CheckState = CheckState.Checked;
+            chkCanvasBold.Location = new Point(10, 84);
+            chkCanvasBold.Name = "chkCanvasBold";
+            chkCanvasBold.TabIndex = 2;
+            chkCanvasBold.Text = "Жирный";
+
+            chkCanvasArrow.AutoSize = true;
+            chkCanvasArrow.Location = new Point(10, 24);
+            chkCanvasArrow.Name = "chkCanvasArrow";
+            chkCanvasArrow.TabIndex = 0;
+            chkCanvasArrow.Text = "Стрелка на конце";
+
+            lblCanvasOpacity.AutoSize = true;
+            lblCanvasOpacity.Location = new Point(10, 86);
+            lblCanvasOpacity.Name = "lblCanvasOpacity";
+            lblCanvasOpacity.TabIndex = 5;
+            lblCanvasOpacity.Text = "Непрозрачность, %";
+
+            lblCanvasShadowX.AutoSize = true;
+            lblCanvasShadowX.Location = new Point(10, 56);
+            lblCanvasShadowX.Name = "lblCanvasShadowX";
+            lblCanvasShadowX.TabIndex = 2;
+            lblCanvasShadowX.Text = "Сдвиг X";
+
+            lblCanvasShadowY.AutoSize = true;
+            lblCanvasShadowY.Location = new Point(118, 56);
+            lblCanvasShadowY.Name = "lblCanvasShadowY";
+            lblCanvasShadowY.TabIndex = 4;
+            lblCanvasShadowY.Text = "Y";
+
+            lblCanvasRadius.AutoSize = true;
+            lblCanvasRadius.Location = new Point(10, 56);
+            lblCanvasRadius.Name = "lblCanvasRadius";
+            lblCanvasRadius.TabIndex = 1;
+            lblCanvasRadius.Text = "Скругление";
+
+            lblCanvasRotation.AutoSize = true;
+            lblCanvasRotation.Location = new Point(10, 86);
+            lblCanvasRotation.Name = "lblCanvasRotation";
+            lblCanvasRotation.TabIndex = 3;
+            lblCanvasRotation.Text = "Поворот, °";
+
+            nudCanvasWidth.Location = new Point(170, 52);
+            nudCanvasWidth.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
+            nudCanvasWidth.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
+            nudCanvasWidth.Name = "nudCanvasWidth";
+            nudCanvasWidth.Size = new Size(46, 23);
+            nudCanvasWidth.TabIndex = 4;
+            nudCanvasWidth.Value = new decimal(new int[] { 8, 0, 0, 0 });
+
+            nudCanvasOpacity.Location = new Point(144, 82);
+            nudCanvasOpacity.Maximum = new decimal(new int[] { 100, 0, 0, 0 });
+            nudCanvasOpacity.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
+            nudCanvasOpacity.Name = "nudCanvasOpacity";
+            nudCanvasOpacity.Size = new Size(46, 23);
+            nudCanvasOpacity.TabIndex = 6;
+            nudCanvasOpacity.Value = new decimal(new int[] { 100, 0, 0, 0 });
+
+            nudCanvasShadowX.Location = new Point(62, 52);
+            nudCanvasShadowX.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
+            nudCanvasShadowX.Minimum = new decimal(new int[] { 200, 0, 0, int.MinValue });
+            nudCanvasShadowX.Name = "nudCanvasShadowX";
+            nudCanvasShadowX.Size = new Size(50, 23);
+            nudCanvasShadowX.TabIndex = 3;
+            nudCanvasShadowX.Value = new decimal(new int[] { 8, 0, 0, int.MinValue });
+
+            nudCanvasShadowY.Location = new Point(134, 52);
+            nudCanvasShadowY.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
+            nudCanvasShadowY.Minimum = new decimal(new int[] { 200, 0, 0, int.MinValue });
+            nudCanvasShadowY.Name = "nudCanvasShadowY";
+            nudCanvasShadowY.Size = new Size(50, 23);
+            nudCanvasShadowY.TabIndex = 5;
+            nudCanvasShadowY.Value = new decimal(new int[] { 8, 0, 0, int.MinValue });
+
+            nudCanvasRadius.Location = new Point(110, 52);
+            nudCanvasRadius.Maximum = new decimal(new int[] { 1000, 0, 0, 0 });
+            nudCanvasRadius.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
+            nudCanvasRadius.Name = "nudCanvasRadius";
+            nudCanvasRadius.Size = new Size(60, 23);
+            nudCanvasRadius.TabIndex = 2;
+            nudCanvasRadius.Value = new decimal(new int[] { 0, 0, 0, 0 });
+
+            nudCanvasRotation.Location = new Point(110, 82);
+            nudCanvasRotation.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
+            nudCanvasRotation.Minimum = new decimal(new int[] { 360, 0, 0, int.MinValue });
+            nudCanvasRotation.Name = "nudCanvasRotation";
+            nudCanvasRotation.Size = new Size(60, 23);
+            nudCanvasRotation.TabIndex = 4;
+            nudCanvasRotation.Value = new decimal(new int[] { 0, 0, 0, 0 });
+
+            txtCanvasText.Location = new Point(10, 22);
+            txtCanvasText.Name = "txtCanvasText";
+            txtCanvasText.Size = new Size(180, 23);
+            txtCanvasText.TabIndex = 0;
+            txtCanvasText.Text = "A";
+
+            cmbCanvasFont.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbCanvasFont.Location = new Point(10, 52);
+            cmbCanvasFont.Name = "cmbCanvasFont";
+            cmbCanvasFont.Size = new Size(180, 23);
+            cmbCanvasFont.TabIndex = 1;
+
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1284, 781);
@@ -1445,8 +2072,33 @@
             editorToolStrip.PerformLayout();
             tabPagePalette.ResumeLayout(false);
             panelPaletteBar.ResumeLayout(false);
+            cmsPaletteColor.ResumeLayout(false);
             tabPageAnimation.ResumeLayout(false);
             pnlAnimToolbar.ResumeLayout(false);
+            tlpStart.ResumeLayout(false);
+            tlpStart.PerformLayout();
+            canvasToolStrip.ResumeLayout(false);
+            canvasToolStrip.PerformLayout();
+            tabPageCanvas.ResumeLayout(false);
+            flpCanvas.ResumeLayout(false);
+            grpCanvasNew.ResumeLayout(false);
+            grpCanvasNew.PerformLayout();
+            grpCanvasLook.ResumeLayout(false);
+            grpCanvasLook.PerformLayout();
+            grpCanvasShadow.ResumeLayout(false);
+            grpCanvasShadow.PerformLayout();
+            grpCanvasText.ResumeLayout(false);
+            grpCanvasText.PerformLayout();
+            grpCanvasShape.ResumeLayout(false);
+            grpCanvasShape.PerformLayout();
+            grpCanvasObject.ResumeLayout(false);
+            grpCanvasObject.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)nudCanvasWidth).EndInit();
+            ((System.ComponentModel.ISupportInitialize)nudCanvasOpacity).EndInit();
+            ((System.ComponentModel.ISupportInitialize)nudCanvasShadowX).EndInit();
+            ((System.ComponentModel.ISupportInitialize)nudCanvasShadowY).EndInit();
+            ((System.ComponentModel.ISupportInitialize)nudCanvasRadius).EndInit();
+            ((System.ComponentModel.ISupportInitialize)nudCanvasRotation).EndInit();
             ((System.ComponentModel.ISupportInitialize)nudAnimFps).EndInit();
             ResumeLayout(false);
             PerformLayout();
@@ -1506,11 +2158,10 @@
         private CheckBox chkEdges;
         private ComboBox cmbEdgeMode;
         private Button btnEdgeColor;
-        private Button btnDropHint;
         private Label lblEdgeThickTitle;
         private NumericUpDown nudEdgeThickness;
 
-        private Button btnPickBgColor, btnRemoveBg;
+        private Button btnRemoveBg;
         private Label lblBgTolTitle;
         private NumericUpDown nudBgTolerance;
 
@@ -1523,9 +2174,13 @@
         private UI.PixelEditorPanel _pixelEditor = null!;
         private UI.PalettePanel _palettePanel = null!;
         private ToolStripButton btnDetachEditor;
+        private ToolStripLabel lblEditorLayer;
+        private ToolStripButton btnEditorModePre, btnEditorModeFinal;
+        private ToolStripSeparator sepEditorLayer;
 
         private Panel panelPaletteBar;
-        private Button btnPickPaletteColor, btnDetachPalette;
+        private Button btnPickPaletteColor, btnDetachPalette, btnAddMissingColor, btnPaletteRamp;
+        private CheckBox chkPerceptual;
 
         private Panel panelBeforeTitle, panelAfterTitle;
         private Button btnDetachBefore, btnDetachAfter;
@@ -1535,5 +2190,30 @@
         private Label lblAnimFrame, lblFpsTitle;
         private NumericUpDown nudAnimFps;
         private FlowLayoutPanel flpFrames;
+
+        private TableLayoutPanel tlpStart;
+        private Button btnStartOpen, btnStartCanvas, btnStartPixelArt;
+        private Label lblStartHint;
+        private KebuzForge.Canvas.CanvasView canvasView = null!;
+        private ToolStrip canvasToolStrip;
+        private ToolStripButton btnCanvasSelect, btnCanvasRect, btnCanvasEllipse, btnCanvasPolygon, btnCanvasLine, btnCanvasArc, btnCanvasText;
+        private ToolStripMenuItem menuFileNewCanvas, menuFileSave, menuFileSaveAs;
+        private ToolStripSeparator sepCanvasZoom;
+        private ToolStripButton btnCanvasFit;
+        private ToolStripButton btnCanvasSnap;
+        private ContextMenuStrip cmsCanvasPick;
+        private ToolTip toolTipCanvas;
+        private Button btnCanvasFillPick, btnCanvasStrokePick, btnCanvasShadowPick;
+        private ContextMenuStrip cmsPaletteColor;
+        private ToolStripMenuItem menuPaletteRemoveColor;
+        private TabPage tabPageCanvas;
+        private FlowLayoutPanel flpCanvas;
+        private GroupBox grpCanvasNew, grpCanvasLook, grpCanvasShadow, grpCanvasText, grpCanvasShape, grpCanvasObject;
+        private Button btnCanvasNew, btnCanvasAddImage, btnCanvasUp, btnCanvasDown, btnCanvasIntersect, btnCanvasGroup, btnCanvasUngroup, btnCanvasDelete, btnCanvasFillColor, btnCanvasStrokeColor, btnCanvasShadowColor;
+        private CheckBox chkCanvasFill, chkCanvasStroke, chkCanvasShadow, chkCanvasBold, chkCanvasArrow;
+        private Label lblCanvasOpacity, lblCanvasShadowX, lblCanvasShadowY, lblCanvasRadius, lblCanvasRotation;
+        private NumericUpDown nudCanvasWidth, nudCanvasOpacity, nudCanvasShadowX, nudCanvasShadowY, nudCanvasRadius, nudCanvasRotation;
+        private TextBox txtCanvasText;
+        private ComboBox cmbCanvasFont;
     }
 }
